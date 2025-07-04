@@ -134,9 +134,27 @@ BerberBul, müşterilerin berberleri kolayca bulmasını ve randevu almasını, 
 - [x] Çalışma saatlerini ayarlama arayüzü oluşturuldu (`src/app/barber/dashboard/working-hours/page.tsx`).
 - [x] Galeri görsellerini yükleme ve yönetme arayüzü oluşturuldu (`src/app/barber/dashboard/gallery/page.tsx`).
 
-- Randevu sistemi entegrasyonu.
-- Müşteri randevu yönetimi.
-- Arama ve filtreleme özellikleri.
-- Harita entegrasyonu.
-- Ödeme sistemleri.
-- İletişim ve bildirimler.
+### Faz 5: Randevu Sistemi Entegrasyonu
+
+#### Yapılacaklar (TO-DOs):
+
+#### 5.1. Veritabanı Şeması Tasarımı ve Oluşturma
+- [x] `public.appointments` tablosunu oluşturuldu (`id`, `customer_id`, `barber_id`, `service_id`, `appointment_date`, `start_time`, `end_time`, `status`, `notes`).
+- [x] Gerekli RLS politikaları tanımlandı.
+
+#### 5.2. Randevu API Uç Noktaları
+- [ ] **Müşteri Tarafı:**
+    - [x] Berberin müsaitlik durumunu kontrol etmek için API rotası oluşturuldu.
+    - [x] Randevu oluşturmak için API rotası oluşturuldu.
+- [x] Müşterinin randevularını listelemek için API rotası oluşturuldu.
+    - [x] Randevuyu iptal etmek için API rotası oluşturuldu.
+- [ ] **Berber Tarafı:**
+    - [x] Berberin randevularını listelemek için API rotası oluşturuldu.
+- [x] Randevu durumunu güncellemek için API rotası oluşturuldu (onaylama, reddetme, tamamlama).
+
+#### 5.3. Randevu Sistemi Frontend Sayfaları
+- [x] **Müşteri Tarafı:**
+    - [x] Berber profil sayfasında randevu alma arayüzü (takvim, saat seçimi, hizmet seçimi) oluşturuldu (`src/app/customer/book-appointment/[barberId]/page.tsx`).
+    - [x] Müşteri paneli altında "Randevularım" sayfası oluşturuldu (randevuları listeleme, detayları görüntüleme, iptal etme) (`src/app/customer/dashboard/appointments/page.tsx`).
+- [x] **Berber Tarafı:**
+    - [x] Berber paneli altında "Randevularım" sayfası oluşturuldu (randevuları listeleme, detayları görüntüleme, durumu güncelleme) (`src/app/barber/dashboard/appointments/page.tsx`).

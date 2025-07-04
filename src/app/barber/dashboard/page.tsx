@@ -1,32 +1,35 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { supabase } from '@/app/lib/supabase';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/app/lib/supabase";
 
 export default function BarberDashboardPage() {
   const router = useRouter();
-  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const checkUser = async () => {
-      const { data: { user }, error } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
 
       if (error || !user) {
-        router.push('/auth/login');
+        router.push("/auth/login");
         return;
       }
 
       // Verify user role
       const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
         .single();
 
-      if (profileError || !profile || profile.role !== 'barber') {
-        router.push('/'); // Redirect to home or an unauthorized page
+      if (profileError || !profile || profile.role !== "barber") {
+        router.push("/"); // Redirect to home or an unauthorized page
         return;
       }
 
@@ -53,7 +56,7 @@ export default function BarberDashboardPage() {
           <button
             onClick={async () => {
               await supabase.auth.signOut();
-              router.push('/auth/login');
+              router.push("/auth/login");
             }}
             className="ml-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
           >
@@ -70,16 +73,24 @@ export default function BarberDashboardPage() {
               </p>
             </div>
             <div className="mt-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Temel Navigasyon</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                Temel Navigasyon
+              </h2>
               <ul className="space-y-2">
                 <li>
-                  <a href="#" className="text-indigo-600 hover:text-indigo-800">Randevularım</a>
+                  <a href="#" className="text-indigo-600 hover:text-indigo-800">
+                    Randevularım
+                  </a>
                 </li>
                 <li>
-                  <a href="#" className="text-indigo-600 hover:text-indigo-800">Hizmetlerim</a>
+                  <a href="#" className="text-indigo-600 hover:text-indigo-800">
+                    Hizmetlerim
+                  </a>
                 </li>
                 <li>
-                  <a href="#" className="text-indigo-600 hover:text-indigo-800">Profilim</a>
+                  <a href="#" className="text-indigo-600 hover:text-indigo-800">
+                    Profilim
+                  </a>
                 </li>
               </ul>
             </div>
