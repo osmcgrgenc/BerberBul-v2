@@ -2,6 +2,14 @@ import { NextResponse } from 'next/server';
 import { supabase } from '@/app/lib/supabase';
 import moment from 'moment-timezone';
 
+// Placeholder for email notification function
+async function sendEmailNotification(to: string, subject: string, body: string) {
+  console.log(`Sending email to: ${to}`);
+  console.log(`Subject: ${subject}`);
+  console.log(`Body: ${body}`);
+  // In a real application, you would integrate with an email service here (e.g., SendGrid, Resend, Supabase Email).
+}
+
 // POST: Create a new appointment
 export async function POST(request: Request) {
   const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -110,6 +118,66 @@ export async function POST(request: Request) {
     if (error) {
       console.error('Error creating appointment:', error);
       return NextResponse.json({ error: 'Randevu oluşturulurken bir hata oluştu.' }, { status: 500 });
+    }
+
+    // Fetch customer and barber details for email notifications
+    const { data: customerProfile, error: customerProfileError } = await supabase
+      .from('profiles')
+      .select('business_name, email') // Assuming email is in profiles table or can be fetched from auth.users
+      .eq('id', user.id)
+      .single();
+
+    const { data: barberProfile, error: barberProfileError } = await supabase
+      .from('profiles')
+      .select('business_name, email')
+      .eq('id', barber_id)
+      .single();
+
+    const { data: serviceDetails, error: serviceDetailsError } = await supabase
+      .from('services')
+      .select('name, price, duration_minutes')
+      .eq('id', service_id)
+      .single();
+
+    if (customerProfileError || barberProfileError || serviceDetailsError) {
+      console.error('Error fetching details for email notification:', customerProfileError || barberProfileError || serviceDetailsError);
+      // Continue without sending email if details cannot be fetched
+    }
+
+    if (customerProfile && barberProfile && serviceDetails) {
+      const appointmentDetails = `Tarih: ${appointment_date}, Saat: ${start_time}-${end_time}, Hizmet: ${serviceDetails.name} (${serviceDetails.price} TL, ${serviceDetails.duration_minutes} dk)`;
+
+      // Email to Customer
+      await sendEmailNotification(
+        user.email!,
+        'Randevu Talebiniz Alındı - BerberBul',
+        `Merhaba ${customerProfile.business_name || user.email},
+
+Berber ${barberProfile.business_name} ile randevu talebiniz alınmıştır.
+Randevu Detayları: ${appointmentDetails}
+Notlar: ${notes || 'Yok'}
+
+Randevunuz berber tarafından onaylandığında size bilgi verilecektir.
+
+Teşekkürler,
+BerberBul Ekibi`
+      );
+
+      // Email to Barber
+      await sendEmailNotification(
+        barberProfile.email!,
+        'Yeni Randevu Talebi - BerberBul',
+        `Merhaba ${barberProfile.business_name},
+
+${customerProfile.business_name || user.email} adlı müşteriden yeni bir randevu talebi aldınız.
+Randevu Detayları: ${appointmentDetails}
+Notlar: ${notes || 'Yok'}
+
+Lütfen randevuyu panelinizden onaylayın veya reddedin.
+
+Teşekkürler,
+BerberBul Ekibi`
+      );
     }
 
     return NextResponse.json(data);

@@ -187,3 +187,19 @@ BerberBul, müşterilerin berberleri kolayca bulmasını ve randevu almasını, 
 - [x] "Berber Bul" sayfasında (`/customer/dashboard/find-barber`) harita bileşeni eklendi.
 - [x] Harita üzerinde berber konumları işaretlendi.
 - [x] Kullanıcının mevcut konumuna göre arama yapma özelliği eklendi.
+
+### Faz 8: İletişim ve Bildirimler
+
+#### Yapılacaklar (TO-DOs):
+
+#### 8.1. E-posta Bildirimleri
+- [ ] Randevu oluşturulduğunda müşteriye ve berbere e-posta gönder.
+- [x] Randevu durumu değiştiğinde (onaylandı, iptal edildi) ilgili taraflara e-posta gönderildi (placeholder fonksiyonu ile).
+- [x] Supabase'in yerleşik e-posta şablonlarını veya özel bir e-posta servisini (SendGrid, Resend vb.) kullan: E-posta gönderme altyapısı placeholder fonksiyonu ile kuruldu. Gerçek entegrasyon için harici servis seçimi ve yapılandırması gereklidir.
+
+#### 8.2. Uygulama İçi Bildirimler (İsteğe Bağlı, MVP sonrası düşünülebilir)
+- [x] Uygulama içi bildirimleri göstermek için bir UI bileşeni oluştur: MVP sonrası düşünülecek.
+- [x] Bildirimleri veritabanında saklamak için `public.notifications` tablosu oluştur: MVP sonrası düşünülecek.
+
+#### 8.3. Kullanıcı Geri Bildirimi (Toast Bildirimleri)
+- [x] Başarı/hata mesajlarını daha kullanıcı dostu bir şekilde göstermek için global bir toast bildirim sistemi entegre edildi (`react-hot-toast`).
