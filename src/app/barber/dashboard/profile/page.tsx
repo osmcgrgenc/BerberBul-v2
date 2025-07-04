@@ -16,6 +16,31 @@ export default function BarberProfilePage() {
   const [address, setAddress] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [bio, setBio] = useState('');
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
+
+  const getCoordinates = async () => {
+    if (!address) {
+      setError('Lütfen bir adres girin.');
+      return;
+    }
+    setError(null);
+    try {
+      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
+      const data = await response.json();
+
+      if (data && data.length > 0) {
+        setLatitude(parseFloat(data[0].lat));
+        setLongitude(parseFloat(data[0].lon));
+        alert('Koordinatlar başarıyla alındı!');
+      } else {
+        setError('Adres için koordinat bulunamadı. Lütfen daha spesifik bir adres girin.');
+      }
+    } catch (err) {
+      console.error('Geocoding error:', err);
+      setError('Koordinatlar alınırken bir hata oluştu. Lütfen daha sonra tekrar deneyin.');
+    }
+  };
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -40,6 +65,8 @@ export default function BarberProfilePage() {
       setAddress(data.address || '');
       setPhoneNumber(data.phone_number || '');
       setBio(data.bio || '');
+      setLatitude(data.latitude || null);
+      setLongitude(data.longitude || null);
       setLoading(false);
     };
 
@@ -57,7 +84,7 @@ export default function BarberProfilePage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ business_name: businessName, address, phone_number: phoneNumber, bio }),
+        body: JSON.stringify({ business_name: businessName, address, phone_number: phoneNumber, bio, latitude, longitude }),
       });
 
       const data = await response.json();
@@ -133,6 +160,17 @@ export default function BarberProfilePage() {
                     onChange={(e) => setAddress(e.target.value)}
                     disabled={isSubmitting}
                   ></textarea>
+                  <button
+                    type="button"
+                    onClick={getCoordinates}
+                    className="mt-2 inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                    disabled={isSubmitting}
+                  >
+                    Koordinatları Al
+                  </button>
+                  {latitude !== null && longitude !== null && (
+                    <p className="mt-2 text-sm text-gray-500">Koordinatlar: {latitude}, {longitude}</p>
+                  )}
                 </div>
                 <div>
                   <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700">

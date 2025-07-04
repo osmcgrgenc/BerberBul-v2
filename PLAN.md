@@ -170,3 +170,20 @@ BerberBul, müşterilerin berberleri kolayca bulmasını ve randevu almasını, 
 - [x] Müşteri paneli altında "Berber Bul" sayfası oluşturuldu (`src/app/customer/dashboard/find-barber/page.tsx`).
 - [x] Bu sayfada arama çubuğu ve filtreleme seçenekleri (konum, hizmetler) eklendi.
 - [x] Arama sonuçları listelendi ve her berber için detay sayfasına bağlantı sağlandı.
+
+### Faz 7: Harita Entegrasyonu
+
+#### Yapılacaklar (TO-DOs):
+
+#### 7.1. Veritabanı Şeması Güncelleme
+- [x] `public.profiles` tablosuna `latitude` (NUMERIC) ve `longitude` (NUMERIC) sütunları eklendi.
+
+#### 7.2. API Uç Noktaları Güncelleme
+- [x] Berber profil güncelleme API'sini (`/api/barber/profile`) `latitude` ve `longitude` kabul edecek şekilde güncellendi.
+- [x] Berber arama API'sini (`/api/customer/barbers`) konum tabanlı arama (belirli bir koordinata yakınlık) yapabilecek şekilde geliştirildi.
+
+#### 7.3. Frontend Entegrasyonu
+- [x] Berber profil düzenleme sayfasında (`/barber/dashboard/profile`) adres girildiğinde otomatik olarak enlem/boylamı alacak bir mekanizma (geocoding) eklendi.
+- [x] "Berber Bul" sayfasında (`/customer/dashboard/find-barber`) harita bileşeni eklendi.
+- [x] Harita üzerinde berber konumları işaretlendi.
+- [x] Kullanıcının mevcut konumuna göre arama yapma özelliği eklendi.

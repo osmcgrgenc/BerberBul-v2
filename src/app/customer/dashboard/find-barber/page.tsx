@@ -1,9 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/app/lib/supabase';
 import Link from 'next/link';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+
+// Fix for default icon issue with Leaflet and Webpack
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'leaflet/images/marker-icon-2x.png',
+  iconUrl: 'leaflet/images/marker-icon.png',
+  shadowUrl: 'leaflet/images/marker-shadow.png',
+});
 
 interface BarberProfile {
   id: string;
@@ -11,6 +22,8 @@ interface BarberProfile {
   address: string;
   phone_number: string;
   bio: string;
+  latitude: number | null;
+  longitude: number | null;
   services: Array<{ id: string; name: string; price: number; duration_minutes: number }>;
   working_hours: Array<{ day_of_week: number; start_time: string; end_time: string }>;
 }
@@ -20,15 +33,32 @@ interface Service {
   name: string;
 }
 
+function LocationMarker({ setLocationFilter, setCenter, setZoom }: any) {
+  const map = useMap();
+
+  useEffect(() => {
+    map.locate().on('locationfound', function (e) {
+      setLocationFilter(`${e.latitude},${e.longitude}`);
+      setCenter([e.latitude, e.longitude]);
+      setZoom(13);
+      map.flyTo(e.latlng, 13);
+    });
+  }, [map, setLocationFilter, setCenter, setZoom]);
+
+  return null;
+}
+
 export default function FindBarberPage() {
   const router = useRouter();
   const [barbers, setBarbers] = useState<BarberProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [locationFilter, setLocationFilter] = useState('');
+  const [locationFilter, setLocationFilter] = useState(''); // Can be address or lat,lon
   const [serviceFilter, setServiceFilter] = useState('');
   const [allServices, setAllServices] = useState<Service[]>([]);
+  const [mapCenter, setMapCenter] = useState<[number, number]>([39.9334, 32.8597]); // Default to Ankara, Turkey
+  const [mapZoom, setMapZoom] = useState(6);
 
   useEffect(() => {
     const fetchAllServices = async () => {
@@ -56,9 +86,18 @@ export default function FindBarberPage() {
     setError(null);
 
     const queryParams = new URLSearchParams();
-    if (locationFilter) queryParams.append('location', locationFilter);
+    if (locationFilter) {
+      // Check if locationFilter is lat,lon format
+      const coords = locationFilter.split(',').map(Number);
+      if (coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
+        queryParams.append('latitude', coords[0].toString());
+        queryParams.append('longitude', coords[1].toString());
+        queryParams.append('radius', '50'); // Default search radius
+      } else {
+        queryParams.append('location', locationFilter);
+      }
+    }
     if (serviceFilter) queryParams.append('service_id', serviceFilter);
-    // Add date/time/rating filters here when implemented
 
     const response = await fetch(`/api/customer/barbers?${queryParams.toString()}`);
     const data = await response.json();
@@ -119,15 +158,38 @@ export default function FindBarberPage() {
                   />
                 </div>
                 <div>
-                  <label htmlFor="locationFilter" className="block text-sm font-medium text-gray-700">Konuma Göre Filtrele</label>
+                  <label htmlFor="locationFilter" className="block text-sm font-medium text-gray-700">Konuma Göre Filtrele (Adres veya Enlem,Boylam)</label>
                   <input
                     type="text"
                     id="locationFilter"
                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                     value={locationFilter}
                     onChange={(e) => setLocationFilter(e.target.value)}
-                    placeholder="Şehir veya ilçe..."
+                    placeholder="Şehir, ilçe veya enlem,boylam..."
                   />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(
+                          (position) => {
+                            setLocationFilter(`${position.coords.latitude},${position.coords.longitude}`);
+                            setMapCenter([position.coords.latitude, position.coords.longitude]);
+                            setMapZoom(13);
+                          },
+                          (posError) => {
+                            console.error('Geolocation error:', posError);
+                            setError('Konumunuz alınamadı. Lütfen tarayıcı ayarlarınızı kontrol edin.');
+                          }
+                        );
+                      } else {
+                        setError('Tarayıcınız konum servislerini desteklemiyor.');
+                      }
+                    }}
+                    className="mt-2 inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                  >
+                    Mevcut Konumu Kullan
+                  </button>
                 </div>
                 <div>
                   <label htmlFor="serviceFilter" className="block text-sm font-medium text-gray-700">Hizmete Göre Filtrele</label>
@@ -144,6 +206,28 @@ export default function FindBarberPage() {
                   </select>
                 </div>
               </div>
+            </div>
+
+            <div className="bg-white shadow overflow-hidden sm:rounded-lg p-6 mb-8" style={{ height: '500px' }}>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">Harita</h2>
+              <MapContainer center={mapCenter} zoom={mapZoom} scrollWheelZoom={false} style={{ height: '100%', width: '100%' }}>
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                {barbers.map(barber => (
+                  barber.latitude && barber.longitude ? (
+                    <Marker key={barber.id} position={[barber.latitude, barber.longitude]}>
+                      <Popup>
+                        <b>{barber.business_name}</b><br />
+                        {barber.address}<br />
+                        <Link href={`/customer/book-appointment/${barber.id}`} className="text-indigo-600 hover:underline">Randevu Al</Link>
+                      </Popup>
+                    </Marker>
+                  ) : null
+                ))}
+                <LocationMarker setLocationFilter={setLocationFilter} setCenter={setMapCenter} setZoom={setMapZoom} />
+              </MapContainer>
             </div>
 
             <div className="bg-white shadow overflow-hidden sm:rounded-lg p-6">

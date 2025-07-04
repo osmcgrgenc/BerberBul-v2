@@ -4,11 +4,23 @@ import moment from 'moment-timezone';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const location = searchParams.get('location');
-  const serviceId = searchParams.get('service_id');
-  const date = searchParams.get('date');
-  const time = searchParams.get('time');
-  const minRating = searchParams.get('min_rating');
+  const userLatitude = searchParams.get('latitude');
+  const userLongitude = searchParams.get('longitude');
+  const radius = searchParams.get('radius') || '50'; // Default radius in km
+
+  // Haversine formula to calculate distance between two points on Earth
+  const haversineDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371; // Radius of Earth in kilometers
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = R * c;
+    return distance;
+  };
 
   let query = supabase
     .from('profiles')
@@ -18,13 +30,15 @@ export async function GET(request: Request) {
       address,
       phone_number,
       bio,
+      latitude,
+      longitude,
       services(id, name, price, duration_minutes),
       working_hours(day_of_week, start_time, end_time)
     `)
     .eq('role', 'barber');
 
   if (location) {
-    query = query.ilike('address', `%{location}%`); // Simple location search
+    query = query.ilike('address', `%${location}%`); // Simple location search
   }
 
   if (serviceId) {
@@ -46,12 +60,27 @@ export async function GET(request: Request) {
 
     let filteredBarbers = barbers;
 
+    // Filter by location if latitude and longitude are provided
+    if (userLatitude && userLongitude) {
+      const lat = parseFloat(userLatitude);
+      const lon = parseFloat(userLongitude);
+      const searchRadius = parseFloat(radius);
+
+      filteredBarbers = filteredBarbers.filter(barber => {
+        if (barber.latitude && barber.longitude) {
+          const distance = haversineDistance(lat, lon, barber.latitude, barber.longitude);
+          return distance <= searchRadius;
+        }
+        return false;
+      });
+    }
+
     // Filter by availability if date and time are provided
     if (date && time) {
       const requestedDateTime = moment(`${date} ${time}`, 'YYYY-MM-DD HH:mm');
       const dayOfWeek = requestedDateTime.day();
 
-      filteredBarbers = barbers.filter(barber => {
+      filteredBarbers = filteredBarbers.filter(barber => {
         // Check working hours
         const hasWorkingHours = barber.working_hours.some((wh: any) => {
           if (wh.day_of_week === dayOfWeek) {

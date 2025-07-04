@@ -10,7 +10,7 @@ export async function GET(request: Request) {
 
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
-    .select('id, business_name, address, phone_number, bio, role')
+    .select('id, business_name, address, phone_number, bio, role, latitude, longitude')
     .eq('id', user.id)
     .single();
 
@@ -32,7 +32,7 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: 'Yetkilendirme başarısız.' }, { status: 401 });
   }
 
-  const { business_name, address, phone_number, bio } = await request.json();
+  const { business_name, address, phone_number, bio, latitude, longitude } = await request.json();
 
   // Check if the user is a barber
   const { data: profile, error: profileCheckError } = await supabase
@@ -47,7 +47,7 @@ export async function PUT(request: Request) {
 
   const { data, error } = await supabase
     .from('profiles')
-    .update({ business_name, address, phone_number, bio, updated_at: new Date().toISOString() })
+    .update({ business_name, address, phone_number, bio, latitude, longitude, updated_at: new Date().toISOString() })
     .eq('id', user.id)
     .select()
     .single();
