@@ -58,35 +58,9 @@ export default function LoginPage() {
         return;
       }
 
-      // Successful login, now fetch user role and redirect
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-
-      if (userError || !user) {
-        console.error('Failed to get user session after login:', userError);
-        setError('Giriş başarılı ancak kullanıcı bilgileri alınamadı. Lütfen tekrar deneyin.');
-        return;
-      }
-
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single();
-
-      if (profileError || !profileData) {
-        console.error('Failed to fetch user profile:', profileError);
-        setError('Kullanıcı profili alınamadı. Lütfen tekrar deneyin.');
-        return;
-      }
-
-      if (profileData.role === 'customer') {
-        router.push('/customer/dashboard');
-      } else if (profileData.role === 'barber') {
-        router.push('/barber/dashboard');
-      } else {
-        // Default redirect if role is not recognized
-        router.push('/');
-      }
+      // Successful login, redirect to home page.
+      // Role-based redirection will be handled in the dashboard pages.
+      router.push('/');
 
     } catch (err) {
       console.error('Login error:', err);
