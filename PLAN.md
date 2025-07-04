@@ -110,8 +110,31 @@ BerberBul, müşterilerin berberleri kolayca bulmasını ve randevu almasını, 
 
 ## Sonraki Adımlar (MVP Sonrası)
 
+### Faz 4: Berber Profili Yönetimi
+
+#### Yapılacaklar (TO-DOs):
+
+#### 4.1. Veritabanı Şeması Tasarımı ve Oluşturma
+- [x] `public.profiles` tablosuna berberlere özel alanlar eklendi (örneğin, `business_name`, `address`, `phone_number`, `bio`).
+- [x] `public.services` tablosu oluşturuldu (`id`, `barber_id`, `name`, `description`, `price`, `duration`).
+- [x] `public.working_hours` tablosu oluşturuldu (`id`, `barber_id`, `day_of_week`, `start_time`, `end_time`).
+- [x] `public.gallery_images` tablosu oluşturuldu (`id`, `barber_id`, `image_url`, `description`).
+- [x] Gerekli RLS (Row Level Security) politikaları tanımlandı.
+
+#### 4.2. Berber Profili API Uç Noktaları
+- [x] Berber profil bilgilerini (işletme adı, adres vb.) güncellemek için API rotası oluşturuldu (`src/app/api/barber/profile/route.ts`).
+- [x] Hizmetleri yönetmek için API rotaları oluşturuldu (ekle, güncelle, sil).
+- [x] Çalışma saatlerini yönetmek için API rotaları oluşturuldu (ekle, güncelle, sil).
+- [x] Galeri görsellerini yönetmek için API rotaları oluşturuldu (yükle, sil).
+
+#### 4.3. Berber Profili Yönetimi Frontend Sayfaları
+- [x] Berber paneli altına "Profilim" sayfası oluşturuldu (`src/app/barber/dashboard/profile/page.tsx`).
+- [x] Bu sayfada berber bilgilerini düzenleme formu oluşturuldu.
+- [x] Hizmetleri listeleme, ekleme, düzenleme ve silme arayüzü oluşturuldu (`src/app/barber/dashboard/services/page.tsx`).
+- [x] Çalışma saatlerini ayarlama arayüzü oluşturuldu (`src/app/barber/dashboard/working-hours/page.tsx`).
+- [x] Galeri görsellerini yükleme ve yönetme arayüzü oluşturuldu (`src/app/barber/dashboard/gallery/page.tsx`).
+
 - Randevu sistemi entegrasyonu.
-- Berber profili yönetimi (hizmetler, fiyatlar, çalışma saatleri, galeri).
 - Müşteri randevu yönetimi.
 - Arama ve filtreleme özellikleri.
 - Harita entegrasyonu.
