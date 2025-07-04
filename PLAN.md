@@ -143,14 +143,14 @@ BerberBul, müşterilerin berberleri kolayca bulmasını ve randevu almasını, 
 - [x] Gerekli RLS politikaları tanımlandı.
 
 #### 5.2. Randevu API Uç Noktaları
-- [ ] **Müşteri Tarafı:**
+- [x] **Müşteri Tarafı:**
     - [x] Berberin müsaitlik durumunu kontrol etmek için API rotası oluşturuldu.
     - [x] Randevu oluşturmak için API rotası oluşturuldu.
-- [x] Müşterinin randevularını listelemek için API rotası oluşturuldu.
+    - [x] Müşterinin randevularını listelemek için API rotası oluşturuldu.
     - [x] Randevuyu iptal etmek için API rotası oluşturuldu.
-- [ ] **Berber Tarafı:**
+- [x] **Berber Tarafı:**
     - [x] Berberin randevularını listelemek için API rotası oluşturuldu.
-- [x] Randevu durumunu güncellemek için API rotası oluşturuldu (onaylama, reddetme, tamamlama).
+    - [x] Randevu durumunu güncellemek için API rotası oluşturuldu (onaylama, reddetme, tamamlama).
 
 #### 5.3. Randevu Sistemi Frontend Sayfaları
 - [x] **Müşteri Tarafı:**
@@ -158,3 +158,15 @@ BerberBul, müşterilerin berberleri kolayca bulmasını ve randevu almasını, 
     - [x] Müşteri paneli altında "Randevularım" sayfası oluşturuldu (randevuları listeleme, detayları görüntüleme, iptal etme) (`src/app/customer/dashboard/appointments/page.tsx`).
 - [x] **Berber Tarafı:**
     - [x] Berber paneli altında "Randevularım" sayfası oluşturuldu (randevuları listeleme, detayları görüntüleme, durumu güncelleme) (`src/app/barber/dashboard/appointments/page.tsx`).
+
+### Faz 6: Arama ve Filtreleme Özellikleri
+
+#### Yapılacaklar (TO-DOs):
+
+#### 6.1. Berber Arama ve Filtreleme API Uç Noktası
+- [x] Berberleri konuma, hizmetlere, derecelendirmeye ve müsaitliğe göre aramak ve filtrelemek için API rotası oluşturuldu.
+
+#### 6.2. Berber Arama Frontend Sayfası
+- [x] Müşteri paneli altında "Berber Bul" sayfası oluşturuldu (`src/app/customer/dashboard/find-barber/page.tsx`).
+- [x] Bu sayfada arama çubuğu ve filtreleme seçenekleri (konum, hizmetler) eklendi.
+- [x] Arama sonuçları listelendi ve her berber için detay sayfasına bağlantı sağlandı.
