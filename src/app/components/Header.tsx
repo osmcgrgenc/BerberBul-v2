@@ -7,12 +7,12 @@ export default function Header() {
       <nav>
         <ul className="flex space-x-4">
           <li>
-            <Link href="/auth/login" className="text-gray-700 hover:text-indigo-600">
+            <Link prefetch={false} href="/auth/login" className="text-gray-700 hover:text-indigo-600">
               Giriş Yap
             </Link>
           </li>
           <li>
-            <Link href="/auth/register" className="text-gray-700 hover:text-indigo-600">
+            <Link prefetch={false} href="/auth/register" className="text-gray-700 hover:text-indigo-600">
               Kayıt Ol
             </Link>
           </li>
