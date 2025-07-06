@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/app/lib/supabase';
-import moment from 'moment-timezone';
+import { supabase, getUserWithRole } from '@/app/lib/supabase';
+import { format } from 'date-fns';
+import { tr } from 'date-fns/locale';
 
 // Placeholder for email notification function
 async function sendEmailNotification(to: string, subject: string, body: string) {
@@ -13,22 +14,11 @@ async function sendEmailNotification(to: string, subject: string, body: string) 
 // PUT: Update an appointment status by barber
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
   const { id } = params; // Appointment ID
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
-
-  if (userError || !user) {
-    return NextResponse.json({ error: 'Yetkilendirme başarısız.' }, { status: 401 });
+  const auth = await getUserWithRole('barber');
+  if ('error' in auth) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
-
-  // Check if the user is a barber
-  const { data: profile, error: profileCheckError } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
-
-  if (profileCheckError || !profile || profile.role !== 'barber') {
-    return NextResponse.json({ error: 'Yetkisiz erişim. Sadece berberler randevu durumunu güncelleyebilir.' }, { status: 403 });
-  }
+  const { user } = auth;
 
   const { status } = await request.json();
 
@@ -74,7 +64,8 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     }
 
     if (updatedAppointment && updatedAppointment.customer && updatedAppointment.barber && updatedAppointment.service) {
-      const appointmentDetails = `Tarih: ${moment(updatedAppointment.appointment_date).format('DD.MM.YYYY')}, Saat: ${updatedAppointment.start_time}-${updatedAppointment.end_time}, Hizmet: ${updatedAppointment.service.name} (${updatedAppointment.service.price} TL, ${updatedAppointment.service.duration} dk)`;
+      const appointmentDateStr = format(new Date(updatedAppointment.appointment_date), 'dd.MM.yyyy', { locale: tr });
+      const appointmentDetails = `Tarih: ${appointmentDateStr}, Saat: ${updatedAppointment.start_time}-${updatedAppointment.end_time}, Hizmet: ${updatedAppointment.service.name} (${updatedAppointment.service.price} TL, ${updatedAppointment.service.duration} dk)`;
 
       let customerSubject = '';
       let customerBody = '';

@@ -1,28 +1,32 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/app/lib/supabase';
 
+interface Service {
+  id: string;
+  name: string;
+  description?: string;
+  price: number;
+  duration_minutes: number;
+}
+
 export default function BarberServicesPage() {
   const router = useRouter();
-  const [services, setServices] = useState<any[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form states for new/editing service
-  const [currentService, setCurrentService] = useState<any>(null);
+  const [currentService, setCurrentService] = useState<Service | null>(null);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
   const [durationMinutes, setDurationMinutes] = useState('');
 
-  useEffect(() => {
-    fetchServices();
-  }, []);
-
-  const fetchServices = async () => {
+  const fetchServices = useCallback(async () => {
     setLoading(true);
     setError(null);
     const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -43,14 +47,18 @@ export default function BarberServicesPage() {
 
     setServices(data);
     setLoading(false);
-  };
+  }, []);
 
-  const handleEdit = (service: any) => {
+  useEffect(() => {
+    fetchServices();
+  }, [fetchServices]);
+
+  const handleEdit = (service: Service) => {
     setCurrentService(service);
     setName(service.name);
     setDescription(service.description || '');
-    setPrice(service.price);
-    setDurationMinutes(service.duration_minutes);
+    setPrice(service.price.toString());
+    setDurationMinutes(service.duration_minutes.toString());
   };
 
   const handleDelete = async (id: string) => {
@@ -87,15 +95,29 @@ export default function BarberServicesPage() {
     setIsSubmitting(true);
     setError(null);
 
-    if (!name || !price || !durationMinutes) {
-      setError('Lütfen tüm zorunlu alanları doldurun.');
+    // Input validation
+    if (!name.trim()) {
+      setError('Hizmet adı zorunludur.');
       setIsSubmitting(false);
       return;
     }
 
+    if (!price || isNaN(parseFloat(price)) || parseFloat(price) <= 0) {
+      setError('Geçerli bir fiyat giriniz.');
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!durationMinutes || isNaN(parseInt(durationMinutes)) || parseInt(durationMinutes) <= 0) {
+      setError('Geçerli bir süre giriniz.');
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Sanitize inputs
     const serviceData = {
-      name,
-      description,
+      name: name.trim().replace(/[<>]/g, ''),
+      description: description.trim().replace(/[<>]/g, ''),
       price: parseFloat(price),
       duration_minutes: parseInt(durationMinutes),
     };

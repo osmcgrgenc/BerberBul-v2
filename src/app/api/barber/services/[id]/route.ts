@@ -1,25 +1,19 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/app/lib/supabase';
+import { supabase, getUserWithRole } from '@/app/lib/supabase';
+
+// Basit XSS/girdi temizleyici (tüm HTML taglerini kaldırır)
+function sanitizeInput(input: string): string {
+  return input.replace(/<[^>]*>?/gm, '');
+}
 
 // PUT: Update a specific service for the authenticated barber
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
   const { id } = params; // Service ID
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
-
-  if (userError || !user) {
-    return NextResponse.json({ error: 'Yetkilendirme başarısız.' }, { status: 401 });
+  const auth = await getUserWithRole('barber');
+  if ('error' in auth) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
-
-  // Check if the user is a barber
-  const { data: profile, error: profileCheckError } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
-
-  if (profileCheckError || !profile || profile.role !== 'barber') {
-    return NextResponse.json({ error: 'Yetkisiz erişim.' }, { status: 403 });
-  }
+  const { user } = auth;
 
   const { name, description, price, duration_minutes } = await request.json();
 
@@ -30,8 +24,8 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   const { data, error } = await supabase
     .from('services')
     .update({
-      name,
-      description,
+      name: sanitizeInput(name),
+      description: description ? sanitizeInput(description) : null,
       price,
       duration_minutes,
       updated_at: new Date().toISOString(),
@@ -42,7 +36,6 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     .single();
 
   if (error) {
-    console.error('Error updating barber service:', error);
     return NextResponse.json({ error: 'Hizmet güncellenirken bir hata oluştu.' }, { status: 500 });
   }
 
@@ -52,22 +45,11 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 // DELETE: Delete a specific service for the authenticated barber
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
   const { id } = params; // Service ID
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
-
-  if (userError || !user) {
-    return NextResponse.json({ error: 'Yetkilendirme başarısız.' }, { status: 401 });
+  const auth = await getUserWithRole('barber');
+  if ('error' in auth) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
-
-  // Check if the user is a barber
-  const { data: profile, error: profileCheckError } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
-
-  if (profileCheckError || !profile || profile.role !== 'barber') {
-    return NextResponse.json({ error: 'Yetkisiz erişim.' }, { status: 403 });
-  }
+  const { user } = auth;
 
   const { error } = await supabase
     .from('services')

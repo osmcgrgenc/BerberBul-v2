@@ -1,24 +1,13 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/app/lib/supabase';
+import { supabase, getUserWithRole } from '@/app/lib/supabase';
 
 // GET: List all working hours for the authenticated barber
-export async function GET(request: Request) {
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
-
-  if (userError || !user) {
-    return NextResponse.json({ error: 'Yetkilendirme başarısız.' }, { status: 401 });
+export async function GET() {
+  const auth = await getUserWithRole('barber');
+  if ('error' in auth) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
-
-  // Check if the user is a barber
-  const { data: profile, error: profileCheckError } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
-
-  if (profileCheckError || !profile || profile.role !== 'barber') {
-    return NextResponse.json({ error: 'Yetkisiz erişim.' }, { status: 403 });
-  }
+  const { user } = auth;
 
   const { data: workingHours, error } = await supabase
     .from('working_hours')
@@ -37,22 +26,11 @@ export async function GET(request: Request) {
 
 // POST: Add a new working hour for the authenticated barber
 export async function POST(request: Request) {
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
-
-  if (userError || !user) {
-    return NextResponse.json({ error: 'Yetkilendirme başarısız.' }, { status: 401 });
+  const auth = await getUserWithRole('barber');
+  if ('error' in auth) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
-
-  // Check if the user is a barber
-  const { data: profile, error: profileCheckError } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
-
-  if (profileCheckError || !profile || profile.role !== 'barber') {
-    return NextResponse.json({ error: 'Yetkisiz erişim.' }, { status: 403 });
-  }
+  const { user } = auth;
 
   const { day_of_week, start_time, end_time } = await request.json();
 

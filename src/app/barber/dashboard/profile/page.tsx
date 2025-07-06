@@ -6,7 +6,6 @@ import { supabase } from '@/app/lib/supabase';
 
 export default function BarberProfilePage() {
   const router = useRouter();
-  const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -60,7 +59,6 @@ export default function BarberProfilePage() {
         return;
       }
 
-      setProfile(data);
       setBusinessName(data.business_name || '');
       setAddress(data.address || '');
       setPhoneNumber(data.phone_number || '');
@@ -78,13 +76,50 @@ export default function BarberProfilePage() {
     setIsSubmitting(true);
     setError(null);
 
+    // Input validation
+    if (!businessName.trim()) {
+      setError('İşletme adı zorunludur.');
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!address.trim()) {
+      setError('Adres zorunludur.');
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!phoneNumber.trim()) {
+      setError('Telefon numarası zorunludur.');
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Phone number validation
+    const phoneRegex = /^[0-9+\-\s()]+$/;
+    if (!phoneRegex.test(phoneNumber)) {
+      setError('Geçersiz telefon numarası formatı.');
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Sanitize inputs
+    const sanitizedData = {
+      business_name: businessName.trim().replace(/[<>]/g, ''),
+      address: address.trim().replace(/[<>]/g, ''),
+      phone_number: phoneNumber.trim(),
+      bio: bio.trim().replace(/[<>]/g, ''),
+      latitude,
+      longitude,
+    };
+
     try {
       const response = await fetch('/api/barber/profile', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ business_name: businessName, address, phone_number: phoneNumber, bio, latitude, longitude }),
+        body: JSON.stringify(sanitizedData),
       });
 
       const data = await response.json();
@@ -94,7 +129,6 @@ export default function BarberProfilePage() {
         return;
       }
 
-      setProfile(data);
       alert('Profil başarıyla güncellendi!');
     } catch (err) {
       console.error('Profile update error:', err);

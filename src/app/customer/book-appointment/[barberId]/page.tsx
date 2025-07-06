@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/app/lib/supabase';
-import moment from 'moment-timezone';
+import { format, addMinutes, parse } from 'date-fns';
 
 interface Service {
   id: string;
@@ -19,7 +19,7 @@ export default function BookAppointmentPage({ params }: { params: { barberId: st
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [selectedDate, setSelectedDate] = useState<string>(moment().format('YYYY-MM-DD'));
+  const [selectedDate, setSelectedDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [services, setServices] = useState<Service[]>([]);
@@ -98,7 +98,7 @@ export default function BookAppointmentPage({ params }: { params: { barberId: st
       service_id: selectedService,
       appointment_date: selectedDate,
       start_time: selectedTime,
-      end_time: moment.utc(selectedTime, 'HH:mm').add(service.duration_minutes, 'minutes').format('HH:mm'),
+      end_time: format(addMinutes(parse(selectedTime, 'HH:mm', new Date()), service.duration_minutes), 'HH:mm'),
       notes,
     };
 

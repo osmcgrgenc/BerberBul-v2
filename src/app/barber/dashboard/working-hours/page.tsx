@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/app/lib/supabase';
 
@@ -14,24 +14,27 @@ const daysOfWeek = [
   { value: 0, label: 'Pazar' },
 ];
 
+interface WorkingHour {
+  id: string;
+  day_of_week: number;
+  start_time: string;
+  end_time: string;
+}
+
 export default function BarberWorkingHoursPage() {
   const router = useRouter();
-  const [workingHours, setWorkingHours] = useState<any[]>([]);
+  const [workingHours, setWorkingHours] = useState<WorkingHour[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form states for new/editing working hour
-  const [currentWorkingHour, setCurrentWorkingHour] = useState<any>(null);
+  const [currentWorkingHour, setCurrentWorkingHour] = useState<WorkingHour | null>(null);
   const [dayOfWeek, setDayOfWeek] = useState<number | string>('');
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
 
-  useEffect(() => {
-    fetchWorkingHours();
-  }, []);
-
-  const fetchWorkingHours = async () => {
+  const fetchWorkingHours = useCallback(async () => {
     setLoading(true);
     setError(null);
     const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -52,9 +55,13 @@ export default function BarberWorkingHoursPage() {
 
     setWorkingHours(data);
     setLoading(false);
-  };
+  }, []);
 
-  const handleEdit = (hour: any) => {
+  useEffect(() => {
+    fetchWorkingHours();
+  }, [fetchWorkingHours]);
+
+  const handleEdit = (hour: WorkingHour) => {
     setCurrentWorkingHour(hour);
     setDayOfWeek(hour.day_of_week);
     setStartTime(hour.start_time);
@@ -104,6 +111,16 @@ export default function BarberWorkingHoursPage() {
     const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
     if (!timeRegex.test(startTime) || !timeRegex.test(endTime)) {
       setError('Geçersiz saat formatı. HH:MM formatını kullanın.');
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Time logic validation
+    const start = new Date(`2000-01-01T${startTime}:00`);
+    const end = new Date(`2000-01-01T${endTime}:00`);
+    
+    if (start >= end) {
+      setError('Bitiş saati başlangıç saatinden sonra olmalıdır.');
       setIsSubmitting(false);
       return;
     }

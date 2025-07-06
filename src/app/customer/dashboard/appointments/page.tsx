@@ -1,22 +1,36 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/app/lib/supabase';
-import moment from 'moment-timezone';
+import { format } from 'date-fns';
+import { tr } from 'date-fns/locale';
+
+interface Appointment {
+  id: string;
+  barber?: {
+    id: string;
+    business_name?: string;
+  };
+  service?: {
+    id: string;
+    name: string;
+  };
+  appointment_date: string;
+  start_time: string;
+  end_time: string;
+  status: string;
+  notes?: string;
+}
 
 export default function CustomerAppointmentsPage() {
   const router = useRouter();
-  const [appointments, setAppointments] = useState<any[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    fetchAppointments();
-  }, []);
-
-  const fetchAppointments = async () => {
+  const fetchAppointments = useCallback(async () => {
     setLoading(true);
     setError(null);
     const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -37,7 +51,11 @@ export default function CustomerAppointmentsPage() {
 
     setAppointments(data);
     setLoading(false);
-  };
+  }, [router]);
+
+  useEffect(() => {
+    fetchAppointments();
+  }, [fetchAppointments]);
 
   const handleCancelAppointment = async (id: string) => {
     if (!confirm('Bu randevuyu iptal etmek istediğinizden emin misiniz?')) return;
@@ -109,7 +127,7 @@ export default function CustomerAppointmentsPage() {
                         </h3>
                         <p className="text-sm text-gray-500">Hizmet: {appt.service?.name}</p>
                         <p className="text-sm text-gray-700">
-                          Tarih: {moment(appt.appointment_date).format('DD.MM.YYYY')}
+                          Tarih: {format(new Date(appt.appointment_date), 'dd.MM.yyyy', { locale: tr })}
                         </p>
                         <p className="text-sm text-gray-700">
                           Saat: {appt.start_time} - {appt.end_time}

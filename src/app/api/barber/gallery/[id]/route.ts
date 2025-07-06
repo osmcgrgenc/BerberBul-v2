@@ -1,25 +1,14 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/app/lib/supabase';
+import { supabase, getUserWithRole } from '@/app/lib/supabase';
 
 // DELETE: Delete a specific gallery image for the authenticated barber
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
   const { id } = params; // Image ID
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
-
-  if (userError || !user) {
-    return NextResponse.json({ error: 'Yetkilendirme başarısız.' }, { status: 401 });
+  const auth = await getUserWithRole('barber');
+  if ('error' in auth) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
-
-  // Check if the user is a barber
-  const { data: profile, error: profileCheckError } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
-
-  if (profileCheckError || !profile || profile.role !== 'barber') {
-    return NextResponse.json({ error: 'Yetkisiz erişim.' }, { status: 403 });
-  }
+  const { user } = auth;
 
   // Get image URL to delete from storage
   const { data: imageData, error: imageFetchError } = await supabase

@@ -1,12 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/app/lib/supabase';
+import Image from 'next/image';
+
+interface GalleryImage {
+  id: string;
+  image_url: string;
+  description?: string;
+  created_at?: string;
+}
 
 export default function BarberGalleryPage() {
   const router = useRouter();
-  const [images, setImages] = useState<any[]>([]);
+  const [images, setImages] = useState<GalleryImage[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -15,11 +23,7 @@ export default function BarberGalleryPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [description, setDescription] = useState('');
 
-  useEffect(() => {
-    fetchImages();
-  }, []);
-
-  const fetchImages = async () => {
+  const fetchImages = useCallback(async () => {
     setLoading(true);
     setError(null);
     const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -40,11 +44,32 @@ export default function BarberGalleryPage() {
 
     setImages(data);
     setLoading(false);
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchImages();
+  }, [fetchImages]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setSelectedFile(e.target.files[0]);
+      const file = e.target.files[0];
+      
+      // File type validation
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        setError('Sadece JPEG, PNG ve WebP formatları desteklenir.');
+        return;
+      }
+      
+      // File size validation (5MB limit)
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (file.size > maxSize) {
+        setError('Dosya boyutu 5MB\'dan küçük olmalıdır.');
+        return;
+      }
+      
+      setSelectedFile(file);
+      setError(null);
     }
   };
 
@@ -197,11 +222,7 @@ export default function BarberGalleryPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   {images.map((image) => (
                     <div key={image.id} className="relative group">
-                      <img
-                        src={image.image_url}
-                        alt={image.description || 'Galeri Görseli'}
-                        className="w-full h-48 object-cover rounded-lg shadow-md"
-                      />
+                      <Image src={image.image_url} alt={image.description || 'Galeri görseli'} width={400} height={300} className="rounded-lg object-cover w-full h-48" />
                       <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-lg">
                         <button
                           onClick={() => handleDelete(image.id)}

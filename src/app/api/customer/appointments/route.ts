@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/app/lib/supabase';
-import moment from 'moment-timezone';
+import { supabase, getUserWithRole } from '@/app/lib/supabase';
+import { parse, isBefore, isValid, getDay, parseISO } from 'date-fns';
 
 // Placeholder for email notification function
 async function sendEmailNotification(to: string, subject: string, body: string) {
@@ -10,24 +10,18 @@ async function sendEmailNotification(to: string, subject: string, body: string) 
   // In a real application, you would integrate with an email service here (e.g., SendGrid, Resend, Supabase Email).
 }
 
+// Basit XSS/girdi temizleyici (tüm HTML taglerini kaldırır)
+function sanitizeInput(input: string): string {
+  return input.replace(/<[^>]*>?/gm, '');
+}
+
 // POST: Create a new appointment
 export async function POST(request: Request) {
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
-
-  if (userError || !user) {
-    return NextResponse.json({ error: 'Yetkilendirme başarısız.' }, { status: 401 });
+  const auth = await getUserWithRole('customer');
+  if ('error' in auth) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
-
-  // Ensure the user is a customer (optional, but good practice for customer-specific APIs)
-  const { data: profile, error: profileCheckError } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
-
-  if (profileCheckError || !profile || profile.role !== 'customer') {
-    return NextResponse.json({ error: 'Yetkisiz erişim. Sadece müşteriler randevu oluşturabilir.' }, { status: 403 });
-  }
+  const { user } = auth;
 
   const { barber_id, service_id, appointment_date, start_time, end_time, notes } = await request.json();
 
@@ -36,7 +30,7 @@ export async function POST(request: Request) {
   }
 
   // Validate date and time formats
-  if (!moment(appointment_date, 'YYYY-MM-DD', true).isValid()) {
+  if (!isValid(parseISO(appointment_date))) {
     return NextResponse.json({ error: 'Geçersiz randevu tarihi formatı. YYYY-MM-DD kullanın.' }, { status: 400 });
   }
   const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
@@ -44,17 +38,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Geçersiz saat formatı. HH:MM kullanın.' }, { status: 400 });
   }
 
-  // Convert times to moment objects for easier comparison
-  const apptStartTime = moment.utc(start_time, 'HH:mm');
-  const apptEndTime = moment.utc(end_time, 'HH:mm');
+  // Convert times to Date objects for easier comparison
+  const apptStartTime = parse(start_time, 'HH:mm', new Date());
+  const apptEndTime = parse(end_time, 'HH:mm', new Date());
 
-  if (apptStartTime.isSameOrAfter(apptEndTime)) {
+  if (isBefore(apptEndTime, apptStartTime)) {
     return NextResponse.json({ error: 'Başlangıç saati bitiş saatinden önce olmalıdır.' }, { status: 400 });
   }
 
   try {
     // 1. Verify barber's working hours for the given date
-    const dayOfWeek = moment(appointment_date).day();
+    const dayOfWeek = getDay(parseISO(appointment_date));
     const { data: workingHours, error: whError } = await supabase
       .from('working_hours')
       .select('start_time, end_time')
@@ -66,10 +60,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Berberin bu gün için çalışma saati tanımlı değil.' }, { status: 400 });
     }
 
-    const barberWorkStartTime = moment.utc(workingHours.start_time, 'HH:mm');
-    const barberWorkEndTime = moment.utc(workingHours.end_time, 'HH:mm');
+    const barberWorkStartTime = parse(workingHours.start_time, 'HH:mm', new Date());
+    const barberWorkEndTime = parse(workingHours.end_time, 'HH:mm', new Date());
 
-    if (apptStartTime.isBefore(barberWorkStartTime) || apptEndTime.isAfter(barberWorkEndTime)) {
+    if (isBefore(apptStartTime, barberWorkStartTime) || isBefore(barberWorkEndTime, apptEndTime)) {
       return NextResponse.json({ error: 'Randevu, berberin çalışma saatleri dışında.' }, { status: 400 });
     }
 
@@ -87,11 +81,11 @@ export async function POST(request: Request) {
     }
 
     const hasConflict = conflictingAppointments.some(appt => {
-      const existingStartTime = moment.utc(appt.start_time, 'HH:mm');
-      const existingEndTime = moment.utc(appt.end_time, 'HH:mm');
+      const existingStartTime = parse(appt.start_time, 'HH:mm', new Date());
+      const existingEndTime = parse(appt.end_time, 'HH:mm', new Date());
 
       return (
-        (apptStartTime.isBefore(existingEndTime) && apptEndTime.isAfter(existingStartTime))
+        (isBefore(apptStartTime, existingEndTime) && isBefore(existingStartTime, apptEndTime))
       );
     });
 
@@ -109,7 +103,7 @@ export async function POST(request: Request) {
         appointment_date,
         start_time,
         end_time,
-        notes,
+        notes: notes ? sanitizeInput(notes) : null,
         status: 'pending', // Default status
       })
       .select()

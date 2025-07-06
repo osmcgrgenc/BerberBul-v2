@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 
 export default function Home() {
@@ -30,7 +29,7 @@ export default function Home() {
             BerberBul: Randevularınız Parmaklarınızın Ucunda
           </h1>
           <p className="text-xl md:text-2xl mb-10 opacity-90">
-            Türkiye'nin en iyi berberlerini keşfedin, kolayca randevu alın ve tarzınızı yenileyin.
+            Türkiye&apos;nin en iyi berberlerini keşfedin, kolayca randevu alın ve tarzınızı yenileyin.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link
@@ -52,7 +51,7 @@ export default function Home() {
       {/* Benefits for Customers */}
       <section className="py-20 px-4 bg-gray-50">
         <div className="max-w-6xl mx-auto text-center">
-          <h2 className="text-4xl font-bold text-gray-800 mb-12">Müşteriler İçin BerberBul'un Faydaları</h2>
+          <h2 className="text-4xl font-bold text-gray-800 mb-12">Müşteriler İçin BerberBul&apos;un Faydaları</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
             <div className="bg-white p-8 rounded-lg shadow-md">
               <h3 className="text-2xl font-semibold text-indigo-600 mb-4">Kolay Keşif</h3>
@@ -73,7 +72,7 @@ export default function Home() {
       {/* Benefits for Barbers */}
       <section className="py-20 px-4 bg-white">
         <div className="max-w-6xl mx-auto text-center">
-          <h2 className="text-4xl font-bold text-gray-800 mb-12">Berberler İçin BerberBul'un Faydaları</h2>
+          <h2 className="text-4xl font-bold text-gray-800 mb-12">Berberler İçin BerberBul&apos;un Faydaları</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
             <div className="bg-gray-50 p-8 rounded-lg shadow-md">
               <h3 className="text-2xl font-semibold text-indigo-600 mb-4">Yeni Müşteriler</h3>

@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  transpilePackages: ['moment-timezone'],
+  // Any other Next.js config options
 };
 
 export default nextConfig;

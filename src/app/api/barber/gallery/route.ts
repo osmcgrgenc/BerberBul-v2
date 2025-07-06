@@ -1,25 +1,19 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/app/lib/supabase';
+import { supabase, getUserWithRole } from '@/app/lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
 
+// Basit XSS/girdi temizleyici (tüm HTML taglerini kaldırır)
+function sanitizeInput(input: string): string {
+  return input.replace(/<[^>]*>?/gm, '');
+}
+
 // GET: List all gallery images for the authenticated barber
-export async function GET(request: Request) {
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
-
-  if (userError || !user) {
-    return NextResponse.json({ error: 'Yetkilendirme başarısız.' }, { status: 401 });
+export async function GET() {
+  const auth = await getUserWithRole('barber');
+  if ('error' in auth) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
-
-  // Check if the user is a barber
-  const { data: profile, error: profileCheckError } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
-
-  if (profileCheckError || !profile || profile.role !== 'barber') {
-    return NextResponse.json({ error: 'Yetkisiz erişim.' }, { status: 403 });
-  }
+  const { user } = auth;
 
   const { data: images, error } = await supabase
     .from('gallery_images')
@@ -37,22 +31,11 @@ export async function GET(request: Request) {
 
 // POST: Upload a new gallery image for the authenticated barber
 export async function POST(request: Request) {
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
-
-  if (userError || !user) {
-    return NextResponse.json({ error: 'Yetkilendirme başarısız.' }, { status: 401 });
+  const auth = await getUserWithRole('barber');
+  if ('error' in auth) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
-
-  // Check if the user is a barber
-  const { data: profile, error: profileCheckError } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
-
-  if (profileCheckError || !profile || profile.role !== 'barber') {
-    return NextResponse.json({ error: 'Yetkisiz erişim.' }, { status: 403 });
-  }
+  const { user } = auth;
 
   const formData = await request.formData();
   const imageFile = formData.get('image') as File;
@@ -62,13 +45,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Görsel dosyası bulunamadı.' }, { status: 400 });
   }
 
-  const fileExt = imageFile.name.split('.').pop();
+  // Dosya tipi ve boyut kontrolü
+  const fileExt = imageFile.name.split('.').pop()?.toLowerCase();
+  const allowedExts = ['jpg', 'jpeg', 'png', 'webp'];
+  if (!fileExt || !allowedExts.includes(fileExt)) {
+    return NextResponse.json({ error: 'Sadece jpg, jpeg, png veya webp dosyalarına izin verilir.' }, { status: 400 });
+  }
+  if (imageFile.size > 5 * 1024 * 1024) {
+    return NextResponse.json({ error: 'Dosya boyutu 5MB üzerinde olamaz.' }, { status: 400 });
+  }
+
   const fileName = `${uuidv4()}.${fileExt}`;
   const filePath = `${user.id}/${fileName}`;
 
   try {
     // Upload image to Supabase Storage
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    const { error: uploadError } = await supabase.storage
       .from('gallery') // Assuming you have a bucket named 'gallery'
       .upload(filePath, imageFile, { cacheControl: '3600', upsert: false });
 
@@ -83,7 +75,7 @@ export async function POST(request: Request) {
       .getPublicUrl(filePath);
 
     if (!publicUrlData || !publicUrlData.publicUrl) {
-      return NextResponse.json({ error: 'Görsel URL'si alınamadı.' }, { status: 500 });
+      return NextResponse.json({ error: 'Görsel URLsi alınamadı.' }, { status: 500 });
     }
 
     // Save image metadata to public.gallery_images table
@@ -92,7 +84,7 @@ export async function POST(request: Request) {
       .insert({
         barber_id: user.id,
         image_url: publicUrlData.publicUrl,
-        description,
+        description: description ? sanitizeInput(description) : null,
       })
       .select()
       .single();

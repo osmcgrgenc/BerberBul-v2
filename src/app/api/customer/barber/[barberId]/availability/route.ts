@@ -1,16 +1,16 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/app/lib/supabase';
-import moment from 'moment-timezone';
+import { parse, format, addMinutes, isBefore, isValid } from 'date-fns';
 
 // Helper function to generate time slots
 const generateTimeSlots = (start: string, end: string, interval: number) => {
   const slots = [];
-  let current = moment.utc(start, 'HH:mm');
-  const endMoment = moment.utc(end, 'HH:mm');
+  let current = parse(start, 'HH:mm', new Date());
+  const endMoment = parse(end, 'HH:mm', new Date());
 
-  while (current.isBefore(endMoment)) {
-    slots.push(current.format('HH:mm'));
-    current.add(interval, 'minutes');
+  while (isBefore(current, endMoment)) {
+    slots.push(format(current, 'HH:mm'));
+    current = addMinutes(current, interval);
   }
   return slots;
 };
@@ -25,12 +25,12 @@ export async function GET(request: Request, { params }: { params: { barberId: st
   }
 
   // Validate date format
-  if (!moment(date, 'YYYY-MM-DD', true).isValid()) {
+  if (!isValid(parse(date, 'YYYY-MM-DD', new Date()))) {
     return NextResponse.json({ error: 'Geçersiz tarih formatı. YYYY-MM-DD kullanın.' }, { status: 400 });
   }
 
   // Get day of week (0 for Sunday, 6 for Saturday)
-  const dayOfWeek = moment(date).day();
+  const dayOfWeek = parse(date, 'YYYY-MM-DD', new Date()).getDay();
 
   try {
     // 1. Get barber's working hours for the given day
@@ -64,16 +64,16 @@ export async function GET(request: Request, { params }: { params: { barberId: st
     const serviceDuration = 30; // minutes
 
     // Generate all possible slots based on working hours
-    let allSlots = generateTimeSlots(workingHours.start_time, workingHours.end_time, serviceDuration);
+    const allSlots = generateTimeSlots(workingHours.start_time, workingHours.end_time, serviceDuration);
 
     // Filter out booked slots
     const bookedSlots = new Set();
     appointments.forEach(appt => {
-      let current = moment.utc(appt.start_time, 'HH:mm');
-      const end = moment.utc(appt.end_time, 'HH:mm');
-      while (current.isBefore(end)) {
-        bookedSlots.add(current.format('HH:mm'));
-        current.add(serviceDuration, 'minutes');
+      let current = parse(appt.start_time, 'HH:mm', new Date());
+      const end = parse(appt.end_time, 'HH:mm', new Date());
+      while (isBefore(current, end)) {
+        bookedSlots.add(format(current, 'HH:mm'));
+        current = addMinutes(current, serviceDuration);
       }
     });
 
