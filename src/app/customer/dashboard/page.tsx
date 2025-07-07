@@ -30,7 +30,7 @@ export default function CustomerDashboardPage() {
         return;
       }
 
-      setUserEmail(user.email);
+      setUserEmail(user.email ?? null);
       setLoading(false);
     };
 

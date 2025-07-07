@@ -20,7 +20,23 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-    return NextResponse.json(data);
+    // Başarılı giriş durumunda kullanıcı bilgilerini döndür
+    if (!data.user) {
+      return NextResponse.json(
+        { error: "Kullanıcı bulunamadı." },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(
+      data,
+      {
+        status: 200,
+        headers: {
+          "Set-Cookie": `sb-access-token=${data.session?.access_token}; Path=/; HttpOnly; Secure; SameSite=Strict`,
+        },
+      }
+    );
   } catch (e) {
     console.error("Login API error:", e);
     return NextResponse.json(
