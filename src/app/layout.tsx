@@ -1,10 +1,8 @@
 import type { Metadata } from "next";
 import { Inter, Roboto } from "next/font/google";
 import "./globals.css";
-import { Toaster } from 'react-hot-toast';
-import dynamic from 'next/dynamic';
-import { cookies } from 'next/headers';
-import { supabase } from './lib/supabase';
+import { Toaster } from "react-hot-toast";
+import Header from "./components/Header";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -19,46 +17,43 @@ const roboto = Roboto({
   display: "swap",
 });
 
-const Header = dynamic(() => import('./components/Header'));
-
+// Metadata can be exported from a client component, but it's often better
+// to keep it in a server component if possible. For simplicity, we keep it here.
+// Note: This might require adjustments based on Next.js version specifics.
 export const metadata: Metadata = {
   title: "BerberBul: Türkiye'nin En İyi Berberlerini Keşfet ve Randevu Al",
-  description: "BerberBul ile yakınınızdaki en iyi berberleri bulun, hizmetlerini inceleyin ve kolayca online randevu alın. Tarzınızı yenilemek için doğru adres!",
-  keywords: ["berber", "randevu", "online randevu", "berber bul", "saç kesimi", "tıraş", "erkek kuaförü", "berber randevu sistemi", "Türkiye berberler"],
+  description:
+    "BerberBul ile yakınınızdaki en iyi berberleri bulun, hizmetlerini inceleyin ve kolayca online randevu alın. Tarzınızı yenilemek için doğru adres!",
+  keywords: [
+    "berber",
+    "randevu",
+    "online randevu",
+    "berber bul",
+    "saç kesimi",
+    "tıraş",
+    "erkek kuaförü",
+    "berber randevu sistemi",
+    "Türkiye berberler",
+  ],
   openGraph: {
     title: "BerberBul: Türkiye'nin En İyi Berberlerini Keşfet ve Randevu Al",
-    description: "BerberBul ile yakınınızdaki en iyi berberleri bulun, hizmetlerini inceleyin ve kolayca online randevu alın.",
+    description:
+      "BerberBul ile yakınınızdaki en iyi berberleri bulun, hizmetlerini inceleyin ve kolayca online randevu alın.",
     type: "website",
     locale: "tr_TR",
   },
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Kullanıcı bilgisini al
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get('sb-access-token');
-  let user = null;
-
-  if (accessToken?.value) {
-    const { data, error } = await supabase.auth.getUser(accessToken.value);
-    if (!error) {
-      user = data.user;
-    }
-  }
-
   return (
     <html lang="tr">
-      <body
-        className={`${inter.variable} ${roboto.variable} antialiased`}
-      >
-        <Header user={user} />
-        <main className="flex-1">
-          {children}
-        </main>
+      <body className={`${inter.variable} ${roboto.variable} antialiased`}>
+        <Header />
+        <main className="flex-1">{children}</main>
         <Toaster />
       </body>
     </html>

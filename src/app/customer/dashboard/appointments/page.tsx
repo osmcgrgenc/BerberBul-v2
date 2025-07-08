@@ -5,6 +5,8 @@ import AppointmentList from './components/AppointmentList';
 import LoadingSpinner from '@/app/components/LoadingSpinner';
 import ErrorMessage from '@/app/components/ErrorMessage';
 import ReviewForm from './components/ReviewForm';
+import AppointmentListSkeleton from '@/app/components/AppointmentListSkeleton';
+import toast from 'react-hot-toast';
 
 import { Appointment } from '@/app/types';
 
@@ -29,11 +31,11 @@ export default function CustomerAppointmentsPage() {
         throw new Error(data.error || 'Failed to cancel appointment.');
       }
 
-      alert('Randevu başarıyla iptal edildi!');
+      toast.success('Randevu başarıyla iptal edildi!');
       refetchAppointments(); // Refresh the list
     } catch (err: any) {
       // setError(err.message); // Error is now handled by the hook if it's a fetch error
-      alert(`Hata: ${err.message}`);
+      toast.error(`Hata: ${err.message}`);
     }
   };
 
@@ -57,7 +59,7 @@ export default function CustomerAppointmentsPage() {
       </header>
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         {loading ? (
-          <LoadingSpinner />
+          <AppointmentListSkeleton />
         ) : error ? (
           <ErrorMessage message={error} />
         ) : (
@@ -79,3 +81,4 @@ export default function CustomerAppointmentsPage() {
     </div>
   );
 }
+

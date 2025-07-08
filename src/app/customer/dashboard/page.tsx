@@ -1,14 +1,39 @@
 'use client';
 
-import { useAuthUser } from '@/app/hooks/useAuthUser';
+import { useAuthStore } from '@/app/store/authStore';
 import LoadingSpinner from '@/app/components/LoadingSpinner';
 import ErrorMessage from '@/app/components/ErrorMessage';
 import DashboardHeader from './components/DashboardHeader';
 import DashboardNav from './components/DashboardNav';
 import WelcomeMessage from './components/WelcomeMessage';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function CustomerDashboardPage() {
-  const { user, profile, loading, error } = useAuthUser('customer');
+  const { user, role } = useAuthStore();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    // This check runs on the client after the store is hydrated
+    if (user === undefined) { // Still loading from hydration
+      return;
+    }
+
+    if (!user) {
+      router.push('/auth/login');
+      return;
+    }
+
+    if (role !== 'customer') {
+      setError('Bu sayfaya erişim yetkiniz yok.');
+      // Optional: redirect to a more appropriate page
+      // router.push('/'); 
+    }
+
+    setLoading(false);
+  }, [user, role, router]);
 
   if (loading) {
     return <LoadingSpinner />;

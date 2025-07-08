@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/app/lib/supabase';
+import toast from 'react-hot-toast';
 
 interface Service {
   id: string;
@@ -80,7 +81,7 @@ export default function BarberServicesPage() {
         return;
       }
 
-      alert('Hizmet başarıyla silindi!');
+      toast.success('Hizmet başarıyla silindi!');
       fetchServices(); // Refresh the list
     } catch (err) {
       console.error('Delete service error:', err);
@@ -141,7 +142,7 @@ export default function BarberServicesPage() {
         return;
       }
 
-      alert(`Hizmet başarıyla ${currentService ? 'güncellendi' : 'eklendi'}!`);
+      toast.success(`Hizmet başarıyla ${currentService ? 'güncellendi' : 'eklendi'}!`);
       setCurrentService(null);
       setName('');
       setDescription('');

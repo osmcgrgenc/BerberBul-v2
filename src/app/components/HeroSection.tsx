@@ -1,5 +1,10 @@
 import Link from "next/link";
-import { UserIcon, ScissorsIcon, SparklesIcon } from "@heroicons/react/24/outline";
+import {
+  UserIcon,
+  ScissorsIcon,
+  SparklesIcon,
+} from "@heroicons/react/24/outline";
+import Button from "./Button";
 
 export default function HeroSection() {
   return (
@@ -18,7 +23,9 @@ export default function HeroSection() {
         {/* Üst badge */}
         <div className="inline-flex items-center space-x-2 bg-white/10 backdrop-blur-sm rounded-full px-6 py-3 mb-8 border border-white/20">
           <SparklesIcon className="w-5 h-5 text-yellow-400" />
-          <span className="text-sm font-medium">Türkiye'nin En İyi Berber Platformu</span>
+          <span className="text-sm font-medium">
+            Türkiye'nin En İyi Berber Platformu
+          </span>
         </div>
 
         {/* Ana başlık */}
@@ -30,12 +37,19 @@ export default function HeroSection() {
         </h1>
 
         {/* Alt başlık */}
-        <p className="text-subheading mb-12 opacity-90 max-w-3xl mx-auto leading-relaxed animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-          Türkiye'nin en iyi berberlerini keşfedin, kolayca randevu alın ve profesyonel hizmetin keyfini çıkarın.
+        <p
+          className="text-subheading mb-12 opacity-90 max-w-3xl mx-auto leading-relaxed animate-fade-in-up"
+          style={{ animationDelay: "0.2s" }}
+        >
+          Türkiye'nin en iyi berberlerini keşfedin, kolayca randevu alın ve
+          profesyonel hizmetin keyfini çıkarın.
         </p>
 
         {/* İstatistikler */}
-        <div className="flex flex-wrap justify-center gap-8 mb-12 animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
+        <div
+          className="flex flex-wrap justify-center gap-8 mb-12 animate-fade-in-up"
+          style={{ animationDelay: "0.4s" }}
+        >
           <div className="text-center">
             <div className="text-3xl font-bold text-yellow-400">500+</div>
             <div className="text-sm opacity-80">Kayıtlı Berber</div>
@@ -51,25 +65,36 @@ export default function HeroSection() {
         </div>
 
         {/* CTA Butonları */}
-        <div className="flex flex-col sm:flex-row justify-center gap-4 animate-fade-in-up" style={{ animationDelay: '0.6s' }}>
-          <Link
-            href="/auth/register?role=customer"
-            className="btn-primary text-lg px-8 py-4 flex items-center justify-center space-x-2 group"
-          >
-            <UserIcon className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" />
-            <span>Müşteri Olarak Başla</span>
+        <div
+          className="flex flex-col sm:flex-row justify-center gap-4 animate-fade-in-up"
+          style={{ animationDelay: "0.6s" }}
+        >
+          <Link href="/auth/register?role=customer">
+            <Button
+              size="lg"
+              className="flex items-center justify-center space-x-2 group"
+            >
+              <UserIcon className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" />
+              <span>Müşteri Olarak Başla</span>
+            </Button>
           </Link>
-          <Link
-            href="/auth/register?role=barber"
-            className="btn-secondary text-lg px-8 py-4 flex items-center justify-center space-x-2 group"
-          >
-            <ScissorsIcon className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" />
-            <span>Berber Olarak Kaydol</span>
+          <Link href="/auth/register?role=barber">
+            <Button
+              variant="secondary"
+              size="lg"
+              className="flex items-center justify-center space-x-2 group"
+            >
+              <ScissorsIcon className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" />
+              <span>Berber Olarak Kaydol</span>
+            </Button>
           </Link>
         </div>
 
         {/* Güven göstergeleri */}
-        <div className="mt-16 flex flex-wrap justify-center items-center gap-8 opacity-70 animate-fade-in-up" style={{ animationDelay: '0.8s' }}>
+        <div
+          className="mt-16 flex flex-wrap justify-center items-center gap-8 opacity-70 animate-fade-in-up"
+          style={{ animationDelay: "0.8s" }}
+        >
           <div className="flex items-center space-x-2">
             <div className="w-2 h-2 bg-green-400 rounded-full"></div>
             <span className="text-sm">SSL Güvenli</span>

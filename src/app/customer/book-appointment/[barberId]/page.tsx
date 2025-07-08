@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/app/lib/supabase';
 import { format, addMinutes, parse } from 'date-fns';
+import toast from 'react-hot-toast';
 
 interface Service {
   id: string;
@@ -118,7 +119,7 @@ export default function BookAppointmentPage({ params }: { params: { barberId: st
         return;
       }
 
-      alert('Randevunuz başarıyla oluşturuldu!');
+      toast.success('Randevunuz başarıyla oluşturuldu!');
       router.push('/customer/dashboard/appointments'); // Redirect to customer appointments
     } catch (err) {
       console.error('Book appointment error:', err);

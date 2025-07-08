@@ -8,6 +8,7 @@ import { Appointment } from "@/app/types";
 import { supabase } from "@/app/lib/supabase";
 import { useRouter } from "next/navigation";
 import { useState, useCallback, useEffect } from "react";
+import toast from 'react-hot-toast';
 
 export default function BarberAppointmentsPage() {
   const router = useRouter();
@@ -87,7 +88,7 @@ export default function BarberAppointmentsPage() {
         );
       }
 
-      alert("Randevu durumu başarıyla güncellendi!");
+      toast.success("Randevu durumu başarıyla güncellendi!");
       fetchAppointments(); // Refresh the list
     } catch (err: any) {
       console.error("Update appointment status error:", err);

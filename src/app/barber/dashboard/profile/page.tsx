@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/app/lib/supabase';
+import toast from 'react-hot-toast';
 
 export default function BarberProfilePage() {
   const router = useRouter();
@@ -31,7 +32,7 @@ export default function BarberProfilePage() {
       if (data && data.length > 0) {
         setLatitude(parseFloat(data[0].lat));
         setLongitude(parseFloat(data[0].lon));
-        alert('Koordinatlar başarıyla alındı!');
+        toast.success('Koordinatlar başarıyla alındı!');
       } else {
         setError('Adres için koordinat bulunamadı. Lütfen daha spesifik bir adres girin.');
       }
@@ -129,7 +130,7 @@ export default function BarberProfilePage() {
         return;
       }
 
-      alert('Profil başarıyla güncellendi!');
+      toast.success('Profil başarıyla güncellendi!');
     } catch (err) {
       console.error('Profile update error:', err);
       setError('Bir hata oluştu. Lütfen daha sonra tekrar deneyin.');

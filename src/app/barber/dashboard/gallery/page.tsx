@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/app/lib/supabase';
 import Image from 'next/image';
+import toast from 'react-hot-toast';
 
 interface GalleryImage {
   id: string;
@@ -92,7 +93,7 @@ export default function BarberGalleryPage() {
         return;
       }
 
-      alert('Görsel başarıyla silindi!');
+      toast.success('Görsel başarıyla silindi!');
       fetchImages(); // Refresh the list
     } catch (err) {
       console.error('Delete image error:', err);
@@ -132,7 +133,7 @@ export default function BarberGalleryPage() {
         return;
       }
 
-      alert('Görsel başarıyla yüklendi!');
+      toast.success('Görsel başarıyla yüklendi!');
       setSelectedFile(null);
       setDescription('');
       fetchImages(); // Refresh the list

@@ -3,70 +3,48 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/app/lib/supabase";
-import { User } from "@supabase/supabase-js";
-import { Bars3Icon, XMarkIcon, UserIcon, ScissorsIcon } from "@heroicons/react/24/outline";
+import { useAuthStore } from "@/app/store/authStore";
+import {
+  Bars3Icon,
+  XMarkIcon,
+  UserIcon,
+  ScissorsIcon,
+} from "@heroicons/react/24/outline";
+import { useAuthInitializer } from "@/app/hooks/useAuthInitializer";
+import Button from "./Button";
 
-type UserRole = "barber" | "customer" | null;
-
-interface HeaderProps {
-  user?: User | null;
-}
-
-export default function Header({ user }: HeaderProps) {
-  const [role, setRole] = useState<UserRole>(null);
-  const [loading, setLoading] = useState(true);
+export default function Header() {
+  const { user, role, clearAuth } = useAuthStore();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  useEffect(() => {
-    const fetchRole = async () => {
-      if (!user) {
-        setRole(null);
-        setLoading(false);
-        return;
-      }
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .single();
-      setRole(profile?.role ?? null);
-      setLoading(false);
-    };
-
-    fetchRole();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(() => {
-      fetchRole();
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [user]);
 
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
     };
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    setRole(null);
+    clearAuth();
+    setIsMobileMenuOpen(false);
   };
-
+  function AuthInitializer() {
+    useAuthInitializer();
+    return null; // This component renders nothing.
+  }
   return (
-    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-      isScrolled 
-        ? 'bg-white/95 backdrop-blur-md shadow-lg border-b border-gray-200' 
-        : 'bg-white shadow-sm'
-    }`}>
+    <header
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        isScrolled
+          ? "bg-white/95 backdrop-blur-md shadow-lg border-b border-gray-200"
+          : "bg-white shadow-sm"
+      }`}
+    >
+      <AuthInitializer />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
@@ -80,67 +58,62 @@ export default function Header({ user }: HeaderProps) {
           </Link>
 
           {/* Desktop Navigation */}
-          {!loading && (
-            <nav className="hidden md:flex items-center space-x-8">
-              {role === "barber" && (
-                <>
-                  <Link
-                    href="/barber/dashboard"
-                    className="text-gray-700 hover:text-indigo-600 font-medium transition-colors duration-200 flex items-center space-x-1"
-                  >
-                    <UserIcon className="w-4 h-4" />
-                    <span>Dashboard</span>
-                  </Link>
-                  <Link
-                    href="/barber/dashboard/appointments"
-                    className="text-gray-700 hover:text-indigo-600 font-medium transition-colors duration-200"
-                  >
-                    Randevular
-                  </Link>
-                </>
-              )}
-              {role === "customer" && (
-                <>
-                  <Link
-                    href="/customer/dashboard/find-barber"
-                    className="text-gray-700 hover:text-indigo-600 font-medium transition-colors duration-200"
-                  >
-                    Berber Ara
-                  </Link>
-                  <Link
-                    href="/customer/dashboard"
-                    className="text-gray-700 hover:text-indigo-600 font-medium transition-colors duration-200"
-                  >
-                    Profil
-                  </Link>
-                </>
-              )}
-              {role === null && (
-                <>
-                  <Link
-                    href="/auth/login"
-                    className="text-gray-700 hover:text-indigo-600 font-medium transition-colors duration-200"
-                  >
-                    Giriş Yap
-                  </Link>
-                  <Link
-                    href="/auth/register"
-                    className="btn-primary"
-                  >
-                    Kayıt Ol
-                  </Link>
-                </>
-              )}
-              {user && (
-                <button
-                  onClick={handleSignOut}
-                  className="text-gray-700 hover:text-red-600 font-medium transition-colors duration-200"
+          <nav className="hidden md:flex items-center space-x-8">
+            {role === "barber" && (
+              <>
+                <Link
+                  href="/barber/dashboard"
+                  className="text-gray-700 hover:text-indigo-600 font-medium transition-colors duration-200 flex items-center space-x-1"
                 >
-                  Çıkış Yap
-                </button>
-              )}
-            </nav>
-          )}
+                  <UserIcon className="w-4 h-4" />
+                  <span>Dashboard</span>
+                </Link>
+                <Link
+                  href="/barber/dashboard/appointments"
+                  className="text-gray-700 hover:text-indigo-600 font-medium transition-colors duration-200"
+                >
+                  Randevular
+                </Link>
+              </>
+            )}
+            {role === "customer" && (
+              <>
+                <Link
+                  href="/customer/dashboard/find-barber"
+                  className="text-gray-700 hover:text-indigo-600 font-medium transition-colors duration-200"
+                >
+                  Berber Ara
+                </Link>
+                <Link
+                  href="/customer/dashboard"
+                  className="text-gray-700 hover:text-indigo-600 font-medium transition-colors duration-200"
+                >
+                  Profil
+                </Link>
+              </>
+            )}
+            {user === null && (
+              <>
+                <Link
+                  href="/auth/login"
+                  className="text-gray-700 hover:text-indigo-600 font-medium transition-colors duration-200"
+                >
+                  Giriş Yap
+                </Link>
+                <Link href="/auth/register">
+                  <Button>Kayıt Ol</Button>
+                </Link>
+              </>
+            )}
+            {user && (
+              <button
+                onClick={handleSignOut}
+                className="text-gray-700 hover:text-red-600 font-medium transition-colors duration-200"
+              >
+                Çıkış Yap
+              </button>
+            )}
+          </nav>
 
           {/* Mobile menu button */}
           <div className="md:hidden">
@@ -158,7 +131,7 @@ export default function Header({ user }: HeaderProps) {
         </div>
 
         {/* Mobile Navigation */}
-        {isMobileMenuOpen && !loading && (
+        {isMobileMenuOpen && (
           <div className="md:hidden border-t border-gray-200 py-4">
             <nav className="flex flex-col space-y-4">
               {role === "barber" && (
@@ -198,7 +171,7 @@ export default function Header({ user }: HeaderProps) {
                   </Link>
                 </>
               )}
-              {role === null && (
+              {user === null && (
                 <>
                   <Link
                     href="/auth/login"
@@ -209,19 +182,15 @@ export default function Header({ user }: HeaderProps) {
                   </Link>
                   <Link
                     href="/auth/register"
-                    className="btn-primary text-center"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
-                    Kayıt Ol
+                    <Button className="w-full">Kayıt Ol</Button>
                   </Link>
                 </>
               )}
               {user && (
                 <button
-                  onClick={() => {
-                    handleSignOut();
-                    setIsMobileMenuOpen(false);
-                  }}
+                  onClick={handleSignOut}
                   className="text-gray-700 hover:text-red-600 font-medium transition-colors duration-200 text-left"
                 >
                   Çıkış Yap

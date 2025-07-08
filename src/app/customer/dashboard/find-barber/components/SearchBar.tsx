@@ -1,6 +1,7 @@
 'use client';
 
 import { Service } from '@/app/types';
+import toast from 'react-hot-toast';
 
 interface SearchBarProps {
   filters: { searchTerm: string; location: string; serviceId: string; categoryId: string; minPrice?: number; maxPrice?: number; minRating?: number; date?: string; time?: string };
@@ -32,11 +33,11 @@ export default function SearchBar({ filters, setFilters, allServices, setMapCent
         },
         (error) => {
           console.error('Geolocation error:', error);
-          alert('Konum alınamadı. Lütfen tarayıcı ayarlarınızı kontrol edin.');
+          toast.error('Konum alınamadı. Lütfen tarayıcı ayarlarınızı kontrol edin.');
         }
       );
     } else {
-      alert('Tarayıcınız konum servislerini desteklemiyor.');
+      toast.info('Tarayıcınız konum servislerini desteklemiyor.');
     }
   };
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import toast from 'react-hot-toast';
 
 import { ReviewFormProps } from '@/app/types';
 
@@ -36,7 +37,7 @@ export default function ReviewForm({ barberId, onClose, onReviewSubmitted }: Rev
         throw new Error(data.error || 'Yorum gönderilirken bir hata oluştu.');
       }
 
-      alert('Yorumunuz başarıyla gönderildi!');
+      toast.success('Yorumunuz başarıyla gönderildi!');
       onReviewSubmitted();
     } catch (err: any) {
       console.error('Submit review error:', err);

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/app/lib/supabase';
+import toast from 'react-hot-toast';
 
 const daysOfWeek = [
   { value: 1, label: 'Pazartesi' },
@@ -87,7 +88,7 @@ export default function BarberWorkingHoursPage() {
         return;
       }
 
-      alert('Çalışma saati başarıyla silindi!');
+      toast.success('Çalışma saati başarıyla silindi!');
       fetchWorkingHours(); // Refresh the list
     } catch (err) {
       console.error('Delete working hour error:', err);
@@ -150,7 +151,7 @@ export default function BarberWorkingHoursPage() {
         return;
       }
 
-      alert(`Çalışma saati başarıyla ${currentWorkingHour ? 'güncellendi' : 'eklendi'}!`);
+      toast.success(`Çalışma saati başarıyla ${currentWorkingHour ? 'güncellendi' : 'eklendi'}!`);
       setCurrentWorkingHour(null);
       setDayOfWeek('');
       setStartTime('');

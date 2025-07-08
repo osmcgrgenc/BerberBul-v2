@@ -15,6 +15,8 @@ const BarberMap = dynamic(() => import('./components/BarberMap'), {
   loading: () => <LoadingSpinner />,
 });
 
+import BarberListSkeleton from '@/app/components/BarberListSkeleton';
+
 export default function FindBarberPage() {
   const searchParams = useSearchParams();
   const initialCategoryId = searchParams.get('categoryId') || '';
@@ -53,7 +55,7 @@ export default function FindBarberPage() {
           <div className="lg:col-span-1">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Sonuçlar</h2>
             {loading ? (
-              <LoadingSpinner />
+              <BarberListSkeleton />
             ) : error ? (
               <ErrorMessage message={error} />
             ) : (
