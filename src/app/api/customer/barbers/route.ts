@@ -9,6 +9,10 @@ export async function GET(request: Request) {
   const radius = searchParams.get('radius') || '50'; // Default radius in km
   const location = searchParams.get('location');
   const serviceId = searchParams.get('serviceId');
+  const categoryId = searchParams.get('categoryId');
+  const minPrice = searchParams.get('minPrice');
+  const maxPrice = searchParams.get('maxPrice');
+  const minRating = searchParams.get('minRating');
   const date = searchParams.get('date');
   const time = searchParams.get('time');
 
@@ -42,7 +46,11 @@ export async function GET(request: Request) {
     .eq('role', 'barber');
 
   if (location) {
-    query = query.ilike('address', `%${location}%`); // Simple location search
+    query = query.ilike('address', `%${location}%`);
+  }
+
+  if (categoryId) {
+    query = query.eq('category_id', categoryId);
   }
 
   try {
@@ -68,6 +76,37 @@ export async function GET(request: Request) {
         }
         return false;
       });
+    }
+
+    // Filter by service price
+    if (minPrice || maxPrice) {
+      const minP = minPrice ? parseFloat(minPrice) : -Infinity;
+      const maxP = maxPrice ? parseFloat(maxPrice) : Infinity;
+      filteredBarbers = filteredBarbers.filter(barber =>
+        barber.services.some(service => service.price >= minP && service.price <= maxP)
+      );
+    }
+
+    // Filter by minimum rating
+    if (minRating) {
+      const minR = parseFloat(minRating);
+      const barbersWithRatings = await Promise.all(filteredBarbers.map(async (barber) => {
+        const { data: reviews, error: reviewsError } = await supabase
+          .from('reviews')
+          .select('rating')
+          .eq('barber_id', barber.id);
+
+        if (reviewsError) {
+          console.error(`Error fetching reviews for ${barber.id}:`, reviewsError);
+          return { ...barber, averageRating: 0 }; // Treat as 0 if reviews can't be fetched
+        }
+
+        const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
+        const avgRating = reviews.length > 0 ? totalRating / reviews.length : 0;
+        return { ...barber, averageRating: avgRating };
+      }));
+
+      filteredBarbers = barbersWithRatings.filter(barber => barber.averageRating >= minR);
     }
 
     // Filter by availability if date and time are provided
