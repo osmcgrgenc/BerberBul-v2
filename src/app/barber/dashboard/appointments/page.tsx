@@ -1,28 +1,9 @@
-'use client';
-
-import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import { supabase } from '@/app/lib/supabase';
-import { format } from 'date-fns';
+import LoadingSpinner from '@/app/components/LoadingSpinner';
+import ErrorMessage from '@/app/components/ErrorMessage';
+import { format, parseISO } from 'date-fns';
 import { tr } from 'date-fns/locale';
 
-interface Appointment {
-  id: string;
-  customer?: {
-    id: string;
-    business_name?: string;
-    email?: string;
-  };
-  service?: {
-    id: string;
-    name: string;
-  };
-  appointment_date: string;
-  start_time: string;
-  end_time: string;
-  status: string;
-  notes?: string;
-}
+import { Appointment } from '@/app/types';
 
 export default function BarberAppointmentsPage() {
   const router = useRouter();
@@ -58,7 +39,7 @@ export default function BarberAppointmentsPage() {
     fetchAppointments();
   }, [fetchAppointments]);
 
-  const handleUpdateAppointmentStatus = async (id: string, status: string) => {
+  const handleUpdateAppointmentStatus = async (id: string, status: Appointment['status']) => {
     if (!confirm(`Randevu durumunu '${status}' olarak güncellemek istediğinizden emin misiniz?`)) return;
 
     setIsSubmitting(true);
@@ -75,34 +56,43 @@ export default function BarberAppointmentsPage() {
 
       if (!response.ok) {
         const data = await response.json();
-        setError(data.error || 'Randevu durumu güncellenirken bir hata oluştu.');
-        return;
+        throw new Error(data.error || 'Randevu durumu güncellenirken bir hata oluştu.');
       }
 
       alert('Randevu durumu başarıyla güncellendi!');
       fetchAppointments(); // Refresh the list
-    } catch (err) {
+    } catch (err: any) {
       console.error('Update appointment status error:', err);
-      setError('Bir hata oluştu. Lütfen daha sonra tekrar deneyin.');
+      setError(err.message || 'Bir hata oluştu. Lütfen daha sonra tekrar deneyin.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const generateGoogleCalendarUrl = (appointment: Appointment) => {
+    if (!appointment.customer || !appointment.service) return '#';
+
+    const startDateTime = parseISO(`${appointment.appointment_date}T${appointment.start_time}`);
+    const endDateTime = parseISO(`${appointment.appointment_date}T${appointment.end_time}`);
+
+    const formatForGoogleCalendar = (date: Date) => {
+      return format(date, 'yyyyMMdd'T'HHmmss');
+    };
+
+    const title = encodeURIComponent(`Randevu: ${appointment.customer.business_name || appointment.customer.email} - ${appointment.service.name}`);
+    const dates = `${formatForGoogleCalendar(startDateTime)}/${formatForGoogleCalendar(endDateTime)}`;
+    const details = encodeURIComponent(`Hizmet: ${appointment.service.name}\nNotlar: ${appointment.notes || 'Yok'}`);
+    const location = encodeURIComponent('Berber Konumu (Henüz Belirtilmemiş)'); // You might want to fetch barber's own address here
+
+    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&details=${details}&location=${location}`;
+  };
+
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <p>Yükleniyor...</p>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <p className="text-red-600">Hata: {error}</p>
-      </div>
-    );
+    return <ErrorMessage message={error} />;
   }
 
   return (
@@ -134,7 +124,7 @@ export default function BarberAppointmentsPage() {
                           Saat: {appt.start_time} - {appt.end_time}
                         </p>
                         <p className="text-sm text-gray-700">
-                          Durum: <span className={`font-semibold ${appt.status === 'confirmed' ? 'text-green-600' : appt.status === 'cancelled' ? 'text-red-600' : 'text-yellow-600'}`}>
+                          Durum: <span className={`font-semibold ${appt.status === 'confirmed' ? 'text-green-600' : appt.status === 'cancelled' ? 'text-red-600' : appt.status === 'completed' ? 'text-blue-600' : 'text-yellow-600'}`}>
                             {appt.status === 'pending' ? 'Beklemede' : appt.status === 'confirmed' ? 'Onaylandı' : appt.status === 'cancelled' ? 'İptal Edildi' : 'Tamamlandı'}
                           </span>
                         </p>
@@ -167,6 +157,16 @@ export default function BarberAppointmentsPage() {
                           >
                             Tamamlandı Olarak İşaretle
                           </button>
+                        )}
+                        {(appt.status === 'confirmed' || appt.status === 'completed') && (
+                          <a
+                            href={generateGoogleCalendarUrl(appt)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                          >
+                            Takvime Ekle
+                          </a>
                         )}
                       </div>
                     </li>
