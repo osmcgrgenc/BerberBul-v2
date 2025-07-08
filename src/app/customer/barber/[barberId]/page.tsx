@@ -1,8 +1,5 @@
-'use client';
-
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { supabase } from '@/app/lib/supabase';
+import { useBarberProfile } from '@/app/hooks/useBarberProfile';
+import { useBarberReviews } from '@/app/hooks/useBarberReviews';
 import Link from 'next/link';
 import LoadingSpinner from '@/app/components/LoadingSpinner';
 import ErrorMessage from '@/app/components/ErrorMessage';
@@ -13,69 +10,15 @@ import { Barber, Review } from '@/app/types';
 
 export default function BarberProfilePage({ params }: { params: { barberId: string } }) {
   const { barberId } = params;
-  const [barber, setBarber] = useState<BarberProfile | null>(null);
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [averageRating, setAverageRating] = useState<string>('0.0');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
+  const { barber, loading: barberLoading, error: barberError } = useBarberProfile(barberId);
+  const { reviews, averageRating, loading: reviewsLoading, error: reviewsError } = useBarberReviews(barberId);
 
-  useEffect(() => {
-    const fetchBarberData = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        // Fetch barber profile
-        const { data: barberData, error: barberError } = await supabase
-          .from('profiles')
-          .select(`
-            id,
-            business_name,
-            address,
-            phone_number,
-            bio,
-            services(id, name, price, duration_minutes),
-            working_hours(day_of_week, start_time, end_time)
-          `)
-          .eq('id', barberId)
-          .eq('role', 'barber')
-          .single();
-
-        if (barberError) {
-          throw new Error(barberError.message || 'Berber profili bulunamadı.');
-        }
-        if (!barberData) {
-          throw new Error('Berber profili bulunamadı.');
-        }
-        setBarber(barberData);
-
-        // Fetch reviews for the barber
-        const reviewsResponse = await fetch(`/api/barber/${barberId}/reviews`);
-        if (!reviewsResponse.ok) {
-          throw new Error('Yorumlar yüklenirken bir hata oluştu.');
-        }
-        const reviewsData = await reviewsResponse.json();
-        setReviews(reviewsData.reviews);
-        setAverageRating(reviewsData.averageRating);
-
-      } catch (err: any) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (barberId) {
-      fetchBarberData();
-    }
-  }, [barberId]);
-
-  if (loading) {
+  if (barberLoading || reviewsLoading) {
     return <LoadingSpinner />;
   }
 
-  if (error) {
-    return <ErrorMessage message={error} />;
+  if (barberError || reviewsError) {
+    return <ErrorMessage message={barberError || reviewsError} />;
   }
 
   if (!barber) {
@@ -171,3 +114,4 @@ export default function BarberProfilePage({ params }: { params: { barberId: stri
     </div>
   );
 }
+

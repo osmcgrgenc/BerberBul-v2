@@ -1,10 +1,9 @@
-'use client';
-
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/app/lib/supabase';
 
 import { BusinessCategory } from '@/app/types';
+import { useBusinessCategories } from '@/app/hooks/useBusinessCategories';
 
 export default function RegisterPage() {
   const [email, setEmail] = useState('');
@@ -12,33 +11,17 @@ export default function RegisterPage() {
   const searchParams = useSearchParams();
   const initialRole = searchParams.get('role') || 'customer';
   const [role, setRole] = useState(initialRole);
-  const [categories, setCategories] = useState<BusinessCategory[]>([]);
+  const { categories, loading: categoriesLoading, error: categoriesError } = useBusinessCategories();
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const router = useRouter();
 
   useEffect(() => {
-    const fetchCategories = async () => {
-      const { data, error } = await supabase
-        .from('business_categories')
-        .select('id, name');
-
-      if (error) {
-        console.error('Error fetching business categories:', error);
-        setError('Kategoriler yüklenirken bir hata oluştu.');
-      } else {
-        setCategories(data);
-        if (data.length > 0) {
-          setSelectedCategoryId(data[0].id); // Select the first category by default
-        }
-      }
-    };
-
-    if (role === 'barber') {
-      fetchCategories();
+    if (!categoriesLoading && categories.length > 0 && !selectedCategoryId) {
+      setSelectedCategoryId(categories[0].id);
     }
-  }, [role]);
+  }, [categories, categoriesLoading, selectedCategoryId]);
 
   const validateEmail = (email: string) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -187,10 +170,12 @@ export default function RegisterPage() {
                   className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md transition duration-150 ease-in-out"
                   value={selectedCategoryId || ''}
                   onChange={(e) => setSelectedCategoryId(e.target.value)}
-                  disabled={isLoading || categories.length === 0}
+                  disabled={isLoading || categoriesLoading || categories.length === 0}
                 >
-                  {categories.length === 0 ? (
+                  {categoriesLoading ? (
                     <option value="">Kategoriler yükleniyor...</option>
+                  ) : categoriesError ? (
+                    <option value="">Kategoriler yüklenirken hata oluştu.</option>
                   ) : (
                     categories.map((cat) => (
                       <option key={cat.id} value={cat.id}>
@@ -199,6 +184,7 @@ export default function RegisterPage() {
                     ))
                   )}
                 </select>
+                {categoriesError && <p className="mt-2 text-sm text-red-600">{categoriesError}</p>}
               </div>
             )}
           </div>

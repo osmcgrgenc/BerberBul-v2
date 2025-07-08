@@ -1,48 +1,18 @@
-'use client';
-
-import { useState, useEffect, useCallback } from 'react';
+import { useCustomerAppointments } from '@/app/hooks/useCustomerAppointments';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/app/lib/supabase';
 import AppointmentList from './components/AppointmentList';
 import LoadingSpinner from '@/app/components/LoadingSpinner';
 import ErrorMessage from '@/app/components/ErrorMessage';
-import ReviewForm from './components/ReviewForm'; // New import
+import ReviewForm from './components/ReviewForm';
 
-// Assuming this type is defined in a central types file
 import { Appointment } from '@/app/types';
 
 export default function CustomerAppointmentsPage() {
   const router = useRouter();
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { appointments, loading, error, refetchAppointments } = useCustomerAppointments();
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [selectedBarberIdForReview, setSelectedBarberIdForReview] = useState<string | null>(null);
-
-  const fetchAppointments = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        router.push('/auth/login');
-        return;
-      }
-
-      const response = await fetch('/api/customer/appointments');
-      if (!response.ok) throw new Error('Failed to fetch appointments');
-      const data = await response.json();
-      setAppointments(data);
-    } catch (err: any) {
-      setError(err.message || 'An unexpected error occurred.');
-    } finally {
-      setLoading(false);
-    }
-  }, [router]);
-
-  useEffect(() => {
-    fetchAppointments();
-  }, [fetchAppointments]);
 
   const handleCancelAppointment = async (id: string) => {
     if (!confirm('Bu randevuyu iptal etmek istediğinizden emin misiniz?')) return;
@@ -60,9 +30,9 @@ export default function CustomerAppointmentsPage() {
       }
 
       alert('Randevu başarıyla iptal edildi!');
-      fetchAppointments(); // Refresh the list
+      refetchAppointments(); // Refresh the list
     } catch (err: any) {
-      setError(err.message);
+      // setError(err.message); // Error is now handled by the hook if it's a fetch error
       alert(`Hata: ${err.message}`);
     }
   };
@@ -75,7 +45,7 @@ export default function CustomerAppointmentsPage() {
   const handleReviewSubmitted = () => {
     setShowReviewForm(false);
     setSelectedBarberIdForReview(null);
-    fetchAppointments(); // Refresh appointments to reflect potential changes or just for good measure
+    refetchAppointments(); // Refresh appointments to reflect potential changes or just for good measure
   };
 
   return (
@@ -94,7 +64,7 @@ export default function CustomerAppointmentsPage() {
           <AppointmentList
             appointments={appointments}
             onCancelAppointment={handleCancelAppointment}
-            onOpenReviewForm={handleOpenReviewForm} // Pass new prop
+            onOpenReviewForm={handleOpenReviewForm}
           />
         )}
 

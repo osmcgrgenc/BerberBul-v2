@@ -13,11 +13,15 @@ Template Data: ${JSON.stringify(template_data || {})}
 ----------------------------
 `);
 
-  // In a real application, this is where you would make an HTTP request to your Go notification service.
-  // Example (conceptual):
-  /*
+  const notificationServiceUrl = process.env.NOTIFICATION_SERVICE_URL;
+
+  if (!notificationServiceUrl) {
+    console.error('NOTIFICATION_SERVICE_URL environment variable is not set.');
+    return NextResponse.json({ error: 'Bildirim servisi URL'si yapılandırılmamış.' }, { status: 500 });
+  }
+
   try {
-    const goServiceResponse = await fetch('http://localhost:8080/send-notification', {
+    const goServiceResponse = await fetch(notificationServiceUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ to, type, subject, message, template_data }),
@@ -34,7 +38,4 @@ Template Data: ${JSON.stringify(template_data || {})}
     console.error('Failed to connect to Go notification service:', error);
     return NextResponse.json({ error: 'Bildirim servisine bağlanılamadı.' }, { status: 500 });
   }
-  */
-
-  return NextResponse.json({ message: 'Bildirim isteği alındı (simüle edildi).' });
 }
