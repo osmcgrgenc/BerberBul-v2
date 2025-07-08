@@ -2,12 +2,17 @@ import { NextResponse } from 'next/server';
 import { supabase, getUserWithRole } from '@/app/lib/supabase';
 import { parse, isBefore, isValid, getDay, parseISO } from 'date-fns';
 
-// Placeholder for email notification function
-async function sendEmailNotification(to: string, subject: string, body: string) {
-  console.log(`Sending email to: ${to}`);
-  console.log(`Subject: ${subject}`);
-  console.log(`Body: ${body}`);
-  // In a real application, you would integrate with an email service here (e.g., SendGrid, Resend, Supabase Email).
+// Helper function to send notifications
+async function sendNotification(to: string, type: 'email' | 'sms', subject: string, message: string, template_data?: any) {
+  try {
+    await fetch('http://localhost:3000/api/notifications', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to, type, subject, message, template_data }),
+    });
+  } catch (error) {
+    console.error('Failed to send notification:', error);
+  }
 }
 
 // Basit XSS/girdi temizleyici (tüm HTML taglerini kaldırır)
@@ -80,19 +85,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Randevu çakışmaları kontrol edilirken bir hata oluştu.' }, { status: 500 });
     }
 
-    const hasConflict = conflictingAppointments.some(appt => {
-      const existingStartTime = parse(appt.start_time, 'HH:mm', new Date());
-      const existingEndTime = parse(appt.end_time, 'HH:mm', new Date());
-
-      return (
-        (isBefore(apptStartTime, existingEndTime) && isBefore(existingStartTime, apptEndTime))
-      );
-    });
-
-    if (hasConflict) {
-      return NextResponse.json({ error: 'Seçilen saat aralığı berber için müsait değil.' }, { status: 409 });
-    }
-
     // 3. Insert the new appointment
     const { data, error } = await supabase
       .from('appointments')
@@ -114,16 +106,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Randevu oluşturulurken bir hata oluştu.' }, { status: 500 });
     }
 
-    // Fetch customer and barber details for email notifications
+    // Fetch customer and barber details for notifications
     const { data: customerProfile, error: customerProfileError } = await supabase
       .from('profiles')
-      .select('business_name, email') // Assuming email is in profiles table or can be fetched from auth.users
+      .select('business_name, email, phone_number') // Include phone_number
       .eq('id', user.id)
       .single();
 
     const { data: barberProfile, error: barberProfileError } = await supabase
       .from('profiles')
-      .select('business_name, email')
+      .select('business_name, email, phone_number') // Include phone_number
       .eq('id', barber_id)
       .single();
 
@@ -134,18 +126,20 @@ export async function POST(request: Request) {
       .single();
 
     if (customerProfileError || barberProfileError || serviceDetailsError) {
-      console.error('Error fetching details for email notification:', customerProfileError || barberProfileError || serviceDetailsError);
-      // Continue without sending email if details cannot be fetched
+      console.error('Error fetching details for notification:', customerProfileError || barberProfileError || serviceDetailsError);
+      // Continue without sending notification if details cannot be fetched
     }
 
     if (customerProfile && barberProfile && serviceDetails) {
       const appointmentDetails = `Tarih: ${appointment_date}, Saat: ${start_time}-${end_time}, Hizmet: ${serviceDetails.name} (${serviceDetails.price} TL, ${serviceDetails.duration_minutes} dk)`;
 
-      // Email to Customer
-      await sendEmailNotification(
-        user.email!,
-        'Randevu Talebiniz Alındı - BerberBul',
-        `Merhaba ${customerProfile.business_name || user.email},
+      // Notification to Customer
+      if (customerProfile.email) {
+        await sendNotification(
+          customerProfile.email,
+          'email',
+          'Randevu Talebiniz Alındı - BerberBul',
+          `Merhaba ${customerProfile.business_name || customerProfile.email},
 
 Berber ${barberProfile.business_name} ile randevu talebiniz alınmıştır.
 Randevu Detayları: ${appointmentDetails}
@@ -155,15 +149,26 @@ Randevunuz berber tarafından onaylandığında size bilgi verilecektir.
 
 Teşekkürler,
 BerberBul Ekibi`
-      );
+        );
+      }
+      if (customerProfile.phone_number) {
+        await sendNotification(
+          customerProfile.phone_number,
+          'sms',
+          '',
+          `Berber ${barberProfile.business_name} ile randevu talebiniz alındı. Detaylar: ${appointmentDetails}`
+        );
+      }
 
-      // Email to Barber
-      await sendEmailNotification(
-        barberProfile.email!,
-        'Yeni Randevu Talebi - BerberBul',
-        `Merhaba ${barberProfile.business_name},
+      // Notification to Barber
+      if (barberProfile.email) {
+        await sendNotification(
+          barberProfile.email,
+          'email',
+          'Yeni Randevu Talebi - BerberBul',
+          `Merhaba ${barberProfile.business_name},
 
-${customerProfile.business_name || user.email} adlı müşteriden yeni bir randevu talebi aldınız.
+${customerProfile.business_name || customerProfile.email} adlı müşteriden yeni bir randevu talebi aldınız.
 Randevu Detayları: ${appointmentDetails}
 Notlar: ${notes || 'Yok'}
 
@@ -171,7 +176,16 @@ Lütfen randevuyu panelinizden onaylayın veya reddedin.
 
 Teşekkürler,
 BerberBul Ekibi`
-      );
+        );
+      }
+      if (barberProfile.phone_number) {
+        await sendNotification(
+          barberProfile.phone_number,
+          'sms',
+          '',
+          `Yeni randevu talebi: ${customerProfile.business_name || customerProfile.email} - ${appointmentDetails}`
+        );
+      }
     }
 
     return NextResponse.json(data);
