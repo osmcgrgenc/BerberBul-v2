@@ -9,10 +9,23 @@ export async function GET() {
   }
   const { user } = auth;
 
+  // Fetch the barber's category_id
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('category_id')
+    .eq('id', user.id)
+    .single();
+
+  if (profileError || !profile || !profile.category_id) {
+    console.error('Error fetching barber profile or category_id:', profileError);
+    return NextResponse.json({ error: 'Berber profili veya kategori bilgisi bulunamadı.' }, { status: 404 });
+  }
+
   const { data: services, error } = await supabase
     .from('services')
     .select('*')
-    .eq('barber_id', user.id);
+    .eq('barber_id', user.id)
+    .eq('category_id', profile.category_id); // Filter by category_id
 
   if (error) {
     console.error('Error fetching barber services:', error);
@@ -29,6 +42,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
   const { user } = auth;
+
+  // Fetch the barber's category_id
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('category_id')
+    .eq('id', user.id)
+    .single();
+
+  if (profileError || !profile || !profile.category_id) {
+    console.error('Error fetching barber profile or category_id:', profileError);
+    return NextResponse.json({ error: 'Berber profili veya kategori bilgisi bulunamadı.' }, { status: 404 });
+  }
 
   // Basit XSS/girdi temizleyici (tüm HTML taglerini kaldırır)
   function sanitizeInput(input: string): string {
@@ -49,6 +74,7 @@ export async function POST(request: Request) {
       description: description ? sanitizeInput(description) : null,
       price,
       duration_minutes,
+      category_id: profile.category_id, // Add category_id to the inserted service
     })
     .select()
     .single();
